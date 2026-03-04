@@ -1,0 +1,11 @@
+(ocamllex
+ (modules lexer))
+
+(menhir
+ (modules parser))
+
+(library
+ (name multi_agent_orchestration)
+ (public_name multi-agent_orchestration)
+ (modules ast lexer parser)
+)

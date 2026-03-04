@@ -1,5 +1,10 @@
 # P4_Multi-Agent_AI_Orchestration_DSL
 
+## Setup
+1. Install dependencies: `opam install menhir`
+2. Build: `dune build`
+3. Run: `dune exec multi-agent_orchestration -- examples/test.ma`
+---
 A Domain-Specific Language for structured and controlled multi-agent AI systems.
 
 ---

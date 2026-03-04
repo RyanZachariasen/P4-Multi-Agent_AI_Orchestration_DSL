@@ -1,0 +1,4 @@
+(executable
+ (public_name multi-agent_orchestration)
+ (name main)
+ (libraries multi_agent_orchestration))

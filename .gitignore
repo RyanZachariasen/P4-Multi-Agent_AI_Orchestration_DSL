@@ -1,0 +1,17 @@
+# --- OCaml/Dune artifacts ---
+# This will catch _build in the root or in subfolders
+_build/
+*.install
+*.exe
+.merlin
+
+# --- Local Opam switches ---
+_opam/
+
+# --- macOS / OS System files ---
+.DS_Store
+
+# --- Editor settings ---
+.vscode/
+.idea/
+*.swp
