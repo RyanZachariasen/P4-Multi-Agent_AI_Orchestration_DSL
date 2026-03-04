@@ -19,7 +19,10 @@
  (name multi-agent_orchestration)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml)
+ (depends 
+  ocaml
+  dune
+  menhir)
  (tags
   ("add topics" "to describe" your project)))
 
