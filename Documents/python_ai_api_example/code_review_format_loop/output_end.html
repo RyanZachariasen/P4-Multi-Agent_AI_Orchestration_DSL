@@ -1,0 +1,1059 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calorie Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+            padding: 20px;
+            min-height: 100vh;
+            color: #1a1a1a;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .date {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 300;
+            color: #000;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-value.updated {
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .stat-subtext {
+            font-size: 11px;
+            color: #ccc;
+            margin-top: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: #eee;
+            border-radius: 2px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #000;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.warning {
+            background: #ff9800;
+        }
+
+        .progress-fill.danger {
+            background: #f44336;
+        }
+
+        .input-section {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+            animation: fadeInUp 0.6s ease 0.1s both;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #000;
+            background-color: #fafafa;
+        }
+
+        input.error {
+            border-color: #f44336;
+            background-color: #ffebee;
+        }
+
+        input::placeholder {
+            color: #ddd;
+        }
+
+        .input-error {
+            font-size: 11px;
+            color: #f44336;
+            margin-top: 4px;
+            display: none;
+            height: 14px;
+        }
+
+        .input-error.show {
+            display: block;
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button:hover:not(:disabled) {
+            background: #333;
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .entries {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            animation: fadeInUp 0.6s ease 0.2s both;
+            min-height: 100px;
+        }
+
+        .entry {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            animation: slideIn 0.3s ease;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        .entry:hover {
+            background-color: #fafafa;
+            transform: translateX(4px);
+        }
+
+        .entry.deleting {
+            animation: slideOut 0.3s ease forwards;
+        }
+
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .entry-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .entry-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .entry-time {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .entry-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: 12px;
+            flex-shrink: 0;
+        }
+
+        .entry-cals {
+            font-size: 18px;
+            font-weight: 300;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .entry-delete {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: color 0.2s, transform 0.2s;
+            width: auto;
+        }
+
+        .entry-delete:hover {
+            color: #f44336;
+            transform: scale(1.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #ccc;
+            padding: 60px 20px;
+            font-size: 13px;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .reset-btn {
+            background: #f5f5f5;
+            color: #999;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+
+        .reset-btn:hover {
+            background: #eee;
+            color: #666;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 300px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            width: 100%;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-title {
+            font-size: 18px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .modal-description {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 24px;
+            word-break: break-word;
+        }
+
+        .modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-buttons button {
+            padding: 10px;
+            font-size: 13px;
+        }
+
+        .modal-buttons .cancel {
+            background: #f5f5f5;
+            color: #999;
+        }
+
+        .modal-buttons .cancel:hover {
+            background: #eee;
+            color: #666;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 13px;
+            animation: slideUp 0.3s ease;
+            z-index: 2000;
+            max-width: 90%;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .toast.error {
+            background: #f44336;
+        }
+
+        .toast.success {
+            background: #4caf50;
+        }
+
+        .undo-btn {
+            background: none;
+            border: none;
+            color: white;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 12px;
+            padding: 0;
+            font-weight: 500;
+            display: inline;
+            width: auto;
+            transition: opacity 0.2s;
+        }
+
+        .undo-btn:hover {
+            opacity: 0.8;
+        }
+
+        .undo-btn:active {
+            transform: none;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+
+            .entry-actions {
+                gap: 8px;
+            }
+
+            .entry-cals {
+                min-width: 40px;
+            }
+
+            .container {
+                padding: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Calorie Tracker</h1>
+            <p class="date" id="date"></p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">Today</div>
+                <div class="stat-value" id="todayCalories">0</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <div class="stat-subtext" id="progressText">0 / 2000</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Remaining</div>
+                <div class="stat-value" id="remaining">2000</div>
+                <div class="stat-subtext">of 2000 cal goal</div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <form id="addForm" onsubmit="handleFormSubmit(event)">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="foodName" 
+                            placeholder="Food name"
+                            autocomplete="off"
+                            aria-label="Food name"
+                            maxlength="100"
+                        >
+                        <div class="input-error" id="foodError"></div>
+                    </div>
+                    <div class="input-wrapper">
+                        <input 
+                            type="number" 
+                            id="calories" 
+                            placeholder="Calories"
+                            min="1"
+                            max="10000"
+                            step="1"
+                            aria-label="Calories"
+                        >
+                        <div class="input-error" id="caloriesError"></div>
+                    </div>
+                </div>
+                <button type="submit" id="addBtn">Add Entry</button>
+            </form>
+        </div>
+
+        <div class="entries" id="entries"></div>
+
+        <button class="reset-btn" onclick="showResetModal()" aria-label="Reset today's entries">Reset Today</button>
+    </div>
+
+    <div class="modal" id="resetModal">
+        <div class="modal-content">
+            <div class="modal-title">Reset today's entries?</div>
+            <div class="modal-description">This action cannot be undone.</div>
+            <div class="modal-buttons">
+                <button class="cancel" onclick="hideResetModal()">Cancel</button>
+                <button onclick="confirmReset()">Reset All</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-title">Delete entry?</div>
+            <div class="modal-description" id="deleteDescription"></div>
+            <div class="modal-buttons">
+                <button class="cancel" onclick="hideDeleteModal()">Cancel</button>
+                <button onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DAILY_GOAL = 2000;
+        const MAX_CALORIES = 10000;
+        const MAX_FOOD_LENGTH = 100;
+        const STORAGE_KEY = 'calorieEntries';
+        const DATE_KEY = 'trackerDate';
+        const UNDO_KEY = 'lastDeletedEntry';
+        const UNDO_TIMEOUT = 5000;
+
+        let deleteQueue = null;
+        let toastTimeout = null;
+        let undoTimeout = null;
+        let isProcessing = false;
+
+        document.getElementById('date').textContent = getFormattedDate();
+        initializeStorage();
+        updateDisplay();
+        setupEventListeners();
+
+        function getFormattedDate() {
+            return new Date().toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function getToday() {
+            return new Date().toDateString();
+        }
+
+        function initializeStorage() {
+            try {
+                const today = getToday();
+                const storedDate = localStorage.getItem(DATE_KEY);
+
+                if (storedDate !== today) {
+                    localStorage.setItem(DATE_KEY, today);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+                    localStorage.removeItem(UNDO_KEY);
+                }
+            } catch (e) {
+                console.error('Storage initialization error:', e);
+                showToast('Failed to initialize storage', 'error');
+            }
+        }
+
+        function getEntries() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error('Error parsing entries:', e);
+                showToast('Failed to load entries', 'error');
+                return [];
+            }
+        }
+
+        function saveEntries(entries) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+                updateDisplay();
+            } catch (e) {
+                console.error('Error saving entries:', e);
+                if (e.name === 'QuotaExceededError') {
+                    showToast('Storage full. Delete some entries.', 'error');
+                } else {
+                    showToast('Failed to save entry', 'error');
+                }
+            }
+        }
+
+        function validateInput(foodName, caloriesInput) {
+            const errors = {};
+
+            if (!foodName || foodName.length === 0) {
+                errors.food = 'Food name required';
+            } else if (foodName.length > MAX_FOOD_LENGTH) {
+                errors.food = `Max ${MAX_FOOD_LENGTH} characters`;
+            }
+
+            if (!caloriesInput || caloriesInput.length === 0) {
+                errors.calories = 'Calories required';
+            } else {
+                const calories = parseInt(caloriesInput);
+                if (isNaN(calories)) {
+                    errors.calories = 'Must be a number';
+                } else if (calories < 1) {
+                    errors.calories = 'Must be at least 1';
+                } else if (calories > MAX_CALORIES) {
+                    errors.calories = `Max ${MAX_CALORIES}`;
+                }
+            }
+
+            return errors;
+        }
+
+        function displayValidationErrors(errors) {
+            document.getElementById('foodError').classList.remove('show');
+            document.getElementById('caloriesError').classList.remove('show');
+            document.getElementById('foodName').classList.remove('error');
+            document.getElementById('calories').classList.remove('error');
+
+            if (errors.food) {
+                const foodError = document.getElementById('foodError');
+                foodError.textContent = errors.food;
+                foodError.classList.add('show');
+                document.getElementById('foodName').classList.add('error');
+            }
+
+            if (errors.calories) {
+                const calError = document.getElementById('caloriesError');
+                calError.textContent = errors.calories;
+                calError.classList.add('show');
+                document.getElementById('calories').classList.add('error');
+            }
+        }
+
+        function clearValidationErrors() {
+            document.getElementById('foodError').classList.remove('show');
+            document.getElementById('caloriesError').classList.remove('show');
+            document.getElementById('foodName').classList.remove('error');
+            document.getElementById('calories').classList.remove('error');
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            addEntry();
+        }
+
+        function addEntry() {
+            if (isProcessing) return;
+
+            const foodName = document.getElementById('foodName').value.trim();
+            const caloriesInput = document.getElementById('calories').value.trim();
+
+            const errors = validateInput(foodName, caloriesInput);
+            if (Object.keys(errors).length > 0) {
+                displayValidationErrors(errors);
+                return;
+            }
+
+            clearValidationErrors();
+            isProcessing = true;
+
+            const calories = parseInt(caloriesInput);
+            const entries = getEntries();
+            const newEntry = {
+                id: Date.now() + Math.random(),
+                name: escapeHtml(foodName),
+                calories: calories,
+                time: new Date().toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: true
+                })
+            };
+
+            entries.push(newEntry);
+            saveEntries(entries);
+
+            document.getElementById('addForm').reset();
+            document.getElementById('foodName').focus();
+
+            document.getElementById('todayCalories').classList.add('updated');
+            setTimeout(() => {
+                document.getElementById('todayCalories').classList.remove('updated');
+                isProcessing = false;
+            }, 500);
+
+            showToast(`Added ${newEntry.name} (${calories} cal)`, 'success');
+        }
+
+        function showDeleteModal(id, name) {
+            deleteQueue = id;
+            const description = document.getElementById('deleteDescription');
+            description.textContent = `Remove "${name}"?`;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function hideDeleteModal() {
+            deleteQueue = null;
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        function confirmDelete() {
+            if (deleteQueue === null || isProcessing) return;
+            
+            isProcessing = true;
+            const entries = getEntries();
+            const entry = entries.find(e => e.id === deleteQueue);
+            
+            if (entry) {
+                const entryElement = document.querySelector(`[data-id="${deleteQueue}"]`);
+                if (entryElement) {
+                    entryElement.classList.add('deleting');
+                }
+
+                setTimeout(() => {
+                    try {
+                        localStorage.setItem(UNDO_KEY, JSON.stringify(entry));
+                    } catch (e) {
+                        console.warn('Could not save for undo:', e);
+                    }
+
+                    const filtered = entries.filter(e => e.id !== deleteQueue);
+                    saveEntries(filtered);
+                    hideDeleteModal();
+                    showUndoToast(`Deleted "${entry.name}"`);
+                    isProcessing = false;
+                }, 300);
+            } else {
+                isProcessing = false;
+            }
+        }
+
+        function undoDelete() {
+            if (isProcessing) return;
+            
+            try {
+                const entry = JSON.parse(localStorage.getItem(UNDO_KEY));
+                if (entry) {
+                    const entries = getEntries();
+                    entries.push(entry);
+                    saveEntries(entries);
+                    localStorage.removeItem(UNDO_KEY);
+                    clearUndoTimeout();
+                    showToast(`Restored "${entry.name}"`, 'success');
+                }
+            } catch (e) {
+                console.error('Error restoring entry:', e);
+                showToast('Failed to restore entry', 'error');
+            }
+        }
+
+        function showToast(message, type = 'default') {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toast);
+
+            toastTimeout = setTimeout(() => {
+                if (toast.parentNode) toast.remove();
+                toastTimeout = null;
+            }, 3000);
+        }
+
+        function showUndoToast(message) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            if (undoTimeout) clearTimeout(undoTimeout);
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            toast.innerHTML = `${escapeHtml(message)} <button class="undo-btn" onclick="undoDelete()">Undo</button>`;
+            document.body.appendChild(toast);
+
+            undoTimeout = setTimeout(() => {
+                if (toast.parentNode) toast.remove();
+                localStorage.removeItem(UNDO_KEY);
+                undoTimeout = null;
+            }, UNDO_TIMEOUT);
+
+            toastTimeout = undoTimeout;
+        }
+
+        function clearUndoTimeout() {
+            if (undoTimeout) {
+                clearTimeout(undoTimeout);
+                undoTimeout = null;
+            }
+        }
+
+        function updateDisplay() {
+            const entries = getEntries();
+            const totalCalories = entries.reduce((sum, e) => sum + e.calories, 0);
+            const remaining = Math.max(0, DAILY_GOAL - totalCalories);
+            const percentage = Math.min(100, (totalCalories / DAILY_GOAL) * 100);
+
+            document.getElementById('todayCalories').textContent = totalCalories;
+            document.getElementById('remaining').textContent = remaining;
+            document.getElementById('progressText').textContent = 
+                `${totalCalories} / ${DAILY_GOAL}`;
+
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = percentage + '%';
+            progressFill.classList.remove('warning', 'danger');
+            
+            if (percentage >= 100) {
+                progressFill.classList.add('danger');
+            } else if (percentage >= 80) {
+                progressFill.classList.add('warning');
+            }
+
+            const entriesDiv = document.getElementById('entries');
+            if (entries.length === 0) {
+                entriesDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🍎</div>
+                        <div>No entries yet. Add one above!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            entriesDiv.innerHTML = entries
+                .map((e) => {
+                    const escapedName = escapeHtml(e.name);
+                    const safeNameForAttr = escapedName.replace(/"/g, '&quot;');
+                    return `
+                        <div class="entry" data-id="${e.id}">
+                            <div class="entry-info">
+                                <div class="entry-name">${escapedName}</div>
+                                <div class="entry-time">${e.time}</div>
+                            </div>
+                            <div class="entry-actions">
+                                <div class="entry-cals">${e.calories}</div>
+                                <button 
+                                    class="entry-delete" 
+                                    onclick="showDeleteModal(${e.id}, '${safeNameForAttr}')"
+                                    title="Delete entry"
+                                    aria-label="Delete ${escapedName}"
+                                >×</button>
+                            </div>
+                        </div>
+                    `;
+                })
+                .join('');
+        }
+
+        function showResetModal() {
+            document.getElementById('resetModal').classList.add('active');
+        }
+
+        function hideResetModal() {
+            document.getElementById('resetModal').classList.remove('active');
+        }
+
+        function confirmReset() {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+            localStorage.removeItem(UNDO_KEY);
+            hideResetModal();
+            updateDisplay();
+            showToast('All entries cleared', 'success');
+
+            setTimeout(() => {
+                isProcessing = false;
+            }, 300);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function setupEventListeners() {
+            document.getElementById('foodName').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('calories').focus();
+                }
+            });
+
+            document.getElementById('calories').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addEntry();
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    hideResetModal();
+                    hideDeleteModal();
+                }
+            });
+
+            document.getElementById('resetModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('resetModal')) {
+                    hideResetModal();
+                }
+            });
+
+            document.getElementById('deleteModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('deleteModal')) {
+                    hideDeleteModal();
+                }
+            });
+
+            document.getElementById('foodName').addEventListener('input', () => {
+                document.getElementById('foodError').classList.remove('show');
+                document.getElementById('foodName').classList.remove('error');
+            });
+
+            document.getElementById('calories').addEventListener('input', () => {
+                document.getElementById('caloriesError').classList.remove('show');
+                document.getElementById('calories').classList.remove('error');
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    initializeStorage();
+                    updateDisplay();
+                }
+            });
+
+            window.addEventListener('beforeunload', () => {
+                if (toastTimeout) clearTimeout(toastTimeout);
+                if (undoTimeout) clearTimeout(undoTimeout);
+            });
+        }
+    </script>
+</body>
+</html>

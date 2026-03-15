@@ -1,0 +1,395 @@
+# Minimalist Calorie Tracker
+
+Here's a sleek, minimalist calorie tracking app:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calorie Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #fafafa;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .date {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 300;
+            color: #000;
+        }
+
+        .stat-subtext {
+            font-size: 11px;
+            color: #ccc;
+            margin-top: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: #eee;
+            border-radius: 2px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #000;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .input-section {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        input {
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        .entries {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .entry {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .entry-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .entry-time {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .entry-cals {
+            font-size: 18px;
+            font-weight: 300;
+        }
+
+        .entry-delete {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: auto;
+            margin-left: 16px;
+            transition: color 0.2s;
+        }
+
+        .entry-delete:hover {
+            color: #999;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #ccc;
+            padding: 40px 20px;
+            font-size: 13px;
+        }
+
+        .reset-btn {
+            background: #f5f5f5;
+            color: #999;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+
+        .reset-btn:hover {
+            background: #eee;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Calorie Tracker</h1>
+            <p class="date" id="date"></p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">Today</div>
+                <div class="stat-value" id="todayCalories">0</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <div class="stat-subtext" id="progressText">0 / 2000</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Remaining</div>
+                <div class="stat-value" id="remaining">2000</div>
+                <div class="stat-subtext">of 2000 cal goal</div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="foodName" 
+                    placeholder="Food name"
+                    autocomplete="off"
+                >
+                <input 
+                    type="number" 
+                    id="calories" 
+                    placeholder="Calories"
+                    min="0"
+                >
+            </div>
+            <button onclick="addEntry()">Add Entry</button>
+        </div>
+
+        <div class="entries" id="entries"></div>
+
+        <button class="reset-btn" onclick="resetDay()">Reset Today</button>
+    </div>
+
+    <script>
+        const DAILY_GOAL = 2000;
+        const STORAGE_KEY = 'calorieEntries';
+        const DATE_KEY = 'trackerDate';
+
+        // Initialize
+        document.getElementById('date').textContent = new Date().toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+        });
+
+        function getToday() {
+            return new Date().toDateString();
+        }
+
+        function initializeStorage() {
+            const today = getToday();
+            const storedDate = localStorage.getItem(DATE_KEY);
+
+            if (storedDate !== today) {
+                localStorage.setItem(DATE_KEY, today);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+            }
+        }
+
+        function getEntries() {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        }
+
+        function saveEntries(entries) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+            updateDisplay();
+        }
+
+        function addEntry() {
+            const foodName = document.getElementById('foodName').value.trim();
+            const calories = parseInt(document.getElementById('calories').value);
+
+            if (!foodName || !calories || calories < 0) {
+                alert('Please enter valid food name and calories');
+                return;
+            }
+
+            const entries = getEntries();
+            entries.push({
+                id: Date.now(),
+                name: foodName,
+                calories: calories,
+                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+            });
+
+            saveEntries(entries);
+            document.getElementById('foodName').value = '';
+            document.getElementById('calories').value = '';
+            document.getElementById('foodName').focus();
+        }
+
+        function deleteEntry(id) {
+            const entries = getEntries().filter(e => e.id !== id);
+            saveEntries(entries);
+        }
+
+        function updateDisplay() {
+            const entries = getEntries();
+            const totalCalories = entries.reduce((sum, e) => sum + e.calories, 0);
+            const remaining = Math.max(0, DAILY_GOAL - totalCalories);
+            const percentage = Math.min(100, (totalCalories / DAILY_GOAL) * 100);
+
+            document.getElementById('todayCalories').textContent = totalCalories;
+            document.getElementById('remaining').textContent = remaining;
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = `${totalCalories} / ${DAILY_GOAL}`;
+
+            const entriesDiv = document.getElementById('entries');
+            if (entries.length === 0) {
+                entriesDiv.innerHTML = '<div class="empty-state">No entries yet. Add one above!</div>';
+                return;
+            }
+
+            entriesDiv.innerHTML = entries.map(e => `
+                <div class="entry">
+                    <div>
+                        <div class="entry-name">${e.name}</div>
+                        <div class="entry-time">${e.time}</div>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div class="entry-cals">${e.calories}</div>
+                        <button class="entry-delete" onclick="deleteEntry(${e.id})">×</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function resetDay() {
+            if (confirm('Reset all entries for today?')) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+                updateDisplay();
+            }
+        }
+
+        // Enter key to add entry
+        document.getElementById('calories').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addEntry();
+        });
+
+        // Start app
+        initializeStorage();
+        updateDisplay();
+    </script>
+</body>
+</html>
+```
+
+## Features:
+
+✨ **Minimalist Design** - Clean, modern interface with smooth animations
+📊 **Progress Tracking** - Visual progress bar toward daily goal
+💾 **Local Storage** - Entries saved to browser (resets daily)
+⚡ **Quick Add** - Fast entry input with Enter key support
+🗑️ **Delete Entries** - Remove items with one click
+📱 **Responsive** - Works great on mobile and desktop
+🎯 **Daily Goal** - Customizable (default 2000 cal)
+
+Just save as an `.html` file and open in your browser. No server needed!
