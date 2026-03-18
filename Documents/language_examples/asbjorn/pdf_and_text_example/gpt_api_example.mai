@@ -1,0 +1,39 @@
+                                    --------- 1. eksempel: Fælles extractor og summarizer ---------
+
+Agent GPT = (
+    model: "gpt-4o-mini"
+    api_key ("OPENAI_API_KEY)
+)
+
+func summarize_pdf (text user_prompt, text pdf_path) -> text:
+    return gpt.prompt("First extract the content of" + pdf_path + "then" + text)
+
+Workflow:
+    print (summarize_pdf("Summarize this concisely", example/doc.pdf))
+
+
+
+
+
+--------- 2. eksempel: Forskellige extractor og summarizer (hvis der er en måde at upload pdf og extract i stedet for file path) ---------
+
+Agent GPT = (
+    model: "gpt-4o-mini"
+    api_key ("OPENAI_API_KEY)
+)
+
+Agent PDF = (
+    model: "pdf-extractor-2000"
+    api_key ("PDF_API_KEY)
+)
+
+func summarize(text user_prompt, text pdf_text) -> text:
+    return gpt.prompt(user_prompt + pdf_text)
+
+func extract_pdf(file pdf_file) -> text:
+    return pdf.extract(pdf_file)
+
+Workflow:
+    doc = extract_pdf("doc.pdf")
+    summary = summarize("Summarize this concisely", doc)
+    print (summary)
