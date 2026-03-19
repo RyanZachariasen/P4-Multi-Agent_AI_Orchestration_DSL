@@ -1,0 +1,13 @@
+Agent[type] SomeAgentname[Var] = ("gpt-4o-mini", APIKEY)
+
+Text[type] text[Var] = "path".ConvertToText()
+
+def json[ReturnType] Summary[FunctionName](Text[type] text[Var], Agent[type] SomeAgentname[Var]):
+    output = SomeAgentname.call(
+        agentTask: "Make a summary of this text" // i stedet for system
+        Input: text // i stedet for user
+    )
+
+    return output
+
+print(Summary(text, SomeAgentname).text())
