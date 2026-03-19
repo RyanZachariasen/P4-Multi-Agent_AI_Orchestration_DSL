@@ -1,0 +1,37 @@
+(------- Some sort of preprocessing based on openrouter ------)
+|                                                             |
+| @agent(gpt-4o-mini) assistant_agent {Role: Assistant}       |
+| @agent(claude-sonnet-4-6) writer_agent {Role: Expert_Writer}|
+|                                                             |
+(-------------------------------------------------------------)
+
+
+(----------------- Prompt Template Examples  -----------------)
+|@assistant_agent                                             |
+|Objective {task}                                             |
+|Tools {tool_name: description}                               |
+|Rules{desc}                                                  |
+|Output_Format{desc}                                          |
+|@end                                                         |
+|                                                             |
+(-------------------------------------------------------------)
+
+prompt1="Save Important Documents"
+prompt2="Summarise it"
+
+//memory keyword to store the output
+memory read_pdfs(assistant_agent:Text){
+    input:
+        input_text->{extract_pdf(path)}
+        input_text->{prompt1}
+    
+}
+
+
+// we're just gonna roleplay that the assistant agent has read multiple pdf(as an assistant) and the writer agent has the role of rewriting
+flow summarise (read_pdfs, writer_agent:Text){ 
+    input:
+        input_text -> {assistant_agent.storedMemory}
+        input_text-> {prompt2}
+
+}
