@@ -1,0 +1,20 @@
+Agent claude1 = Anthropic("claude-sonnet-4-6", API_KEY_NAME)
+Agent claude2 = Anthropic("claude-haiku-4-5-20251001", API_KEY_NAME)
+
+func claude_code(Text text) -> Code:
+    return claude1.prompt(text, maxtokens=10000)
+
+func claude_review(Code code) -> Text:
+    return claude2.prompt(text, maxtokens=10000)
+
+func claude_improve(Code code, Text text) -> Code:
+    
+    return claude1.prompt(code + text, maxtokens=10000)
+
+start:
+    code = claude_code(input[1])
+    review = claude_review(code)
+    improved_code = claude_review(code, review)
+    
+    @write_file("./code.py", improved_code) 
+    
