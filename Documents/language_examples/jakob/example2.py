@@ -11,6 +11,7 @@ def calculate(text):
         messages=text,
         model="claude-sonnet-4-6",
     ).content[0].text
+
     idx = response.index("x=")
     j = 2
     int_string = ""
@@ -21,6 +22,5 @@ def calculate(text):
     return int(int_string)
             
     
-
 if __name__ == "__main__":
     print(calculate(sys.argv[1]))
