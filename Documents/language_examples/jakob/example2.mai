@@ -1,0 +1,10 @@
+Agent claude = Anthropic("claude-sonnet-4-6", API_KEY_NAME)
+
+func calculate(Text text) -> Int:
+    return claude.prompt(text, maxtokens=100)
+
+start:
+    my_int = calcute(input[1])
+    new_result = my_int * 1000
+    print(new_result)
+    
