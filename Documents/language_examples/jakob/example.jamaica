@@ -1,9 +1,0 @@
-Agent claude = Anthropic("claude-sonnet-4-6", API_KEY_NAME)
-
-func call(text t) -> text:
-    return claude.prompt(text)
-
-
-start:
-    print call("This is a prompt")
-    print call(input[1]) # reads arg [1]
