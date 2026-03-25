@@ -1,24 +1,24 @@
------------------- 1. Example (Specified agents for each task)   ------------------
+------------------ 2. Example  ------------------
 
 // Defining agents
 
-Agent Summarizer = {
+Agent GPT = {
     provider: openai,
     model: "gpt-4o-mini",
     api_key: (OPENAI_API_KEY)
+    
+    task: Summarizer {
+        system_prompt: "You are an assistant for summarizing documents and text. When you summarize make it concise and easily understandable.",
+        max_tokens: 10000,
+    },
 
-    system_prompt?: "You are an assistant for summarizing documents and text. When you summarize make it concise and easily understandable.",
-    max_tokens?: 10000,
+    task: KeyPointsHighlighter {
+        system_prompt: "You are an assistant for extracting and highlighting the key and most important parts of a text or document",
+        temperature: 0.3
+    }
+
 }
 
-Agent KeyPointsHighlighter = {
-    provider: openai,
-    model: "gpt-5.4-mini",
-    api_key: (OPENAI_API_KEY)
-
-    system_prompt?: "You are an assistant for extracting and highlighting the key and most important parts of a text or document",
-    temperature?: 0.3
-}
 
 // Defining functions
 
