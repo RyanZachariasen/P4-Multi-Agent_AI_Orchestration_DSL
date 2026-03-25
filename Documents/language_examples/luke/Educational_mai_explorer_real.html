@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>.mai → Python (real code)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#11111b;color:#cdd6f4;font-family:system-ui,sans-serif;font-size:14px;padding:2rem}
+h1{font-size:18px;font-weight:500;color:#cba6f7;margin-bottom:4px}
+.sub{font-size:12px;color:#6c7086;margin-bottom:1.5rem}
+.outer{border:0.5px solid #313244;border-radius:12px;overflow:hidden}
+.headers{display:grid;grid-template-columns:1fr 1fr}
+.hdr{padding:10px 16px;font-family:system-ui,sans-serif;font-size:11px;font-weight:500;letter-spacing:.05em;color:#6c7086;background:#181825;border-bottom:0.5px solid #313244}
+.hdr:first-child{border-right:0.5px solid #313244}
+.hint{padding:5px 16px;font-family:system-ui,sans-serif;font-size:11px;color:#45475a;background:#13131f;border-bottom:0.5px solid #313244;text-align:center}
+.row{display:grid;grid-template-columns:1fr 1fr;border-bottom:0.5px solid #313244}
+.row:last-child{border-bottom:none}
+.sec{grid-column:1/-1;padding:4px 16px;font-family:system-ui,sans-serif;font-size:10px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:#6c7086;background:#13131f;border-bottom:0.5px solid #313244}
+.cell{padding:12px 16px;white-space:pre;overflow-x:auto;cursor:pointer;transition:background .12s,opacity .12s;line-height:1.8;font-family:'Consolas','Monaco',monospace;font-size:12px;vertical-align:top}
+.cell.mai{background:#1a1a2e;border-right:0.5px solid #313244}
+.cell.py{background:#1e1e2e}
+.cell.no-map{cursor:default;opacity:.4}
+.cell.hi-mai{background:#261f45!important;outline:1px solid #534ab7;outline-offset:-1px}
+.cell.hi-py{background:#1a2b1a!important;outline:1px solid #1d9e75;outline-offset:-1px}
+.cell.dim{opacity:.18}
+.kw{color:#cba6f7;font-weight:bold}.str{color:#a6e3a1}.var{color:#fab387}.typ{color:#89dceb}.cm{color:#585870;font-style:italic}.num{color:#f9e2af}
+.note{font-size:11px;color:#45475a;font-style:italic}
+.panel{display:none;border-top:0.5px solid #313244;background:#13131f}
+.panel.open{display:block}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid #313244;background:#181825}
+.panel-title{font-family:system-ui,sans-serif;font-size:14px;font-weight:500;color:#cba6f7}
+.close-btn{font-family:system-ui,sans-serif;font-size:12px;color:#6c7086;cursor:pointer;padding:3px 10px;border:0.5px solid #313244;border-radius:4px;background:transparent}
+.close-btn:hover{background:#1e1e2e;color:#cdd6f4}
+.panel-body{display:grid;grid-template-columns:1fr 1fr}
+.panel-col{padding:16px}
+.panel-col.l{border-right:0.5px solid #313244}
+.panel-col h3{font-family:system-ui,sans-serif;font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#45475a;margin-bottom:10px}
+.code-block{background:#1e1e2e;border-radius:6px;padding:12px 14px;white-space:pre;font-family:'Consolas','Monaco',monospace;font-size:12px;line-height:1.8;overflow-x:auto;border:0.5px solid #313244}
+.code-block.mai-bg{background:#1a1a2e}
+.explain{font-family:system-ui,sans-serif;font-size:13px;color:#a6adc8;line-height:1.75;margin-top:14px}
+.explain b{color:#cdd6f4;font-weight:500}
+.explain p{margin-bottom:8px}.explain p:last-child{margin-bottom:0}
+</style>
+</head>
+<body>
+<h1>.mai → Python &nbsp;<span style="font-size:13px;color:#585870;font-weight:400">exact generated code</span></h1>
+<p class="sub">Python shown is exactly what generated_summariser.py contains. Hover to highlight · click to explain.</p>
+<div class="outer">
+  <div class="headers">
+    <div class="hdr">.mai &nbsp;·&nbsp; summarise_pdf_simple.mai</div>
+    <div class="hdr">Python &nbsp;·&nbsp; generated_summariser.py</div>
+  </div>
+  <div class="hint">hover to highlight &nbsp;·&nbsp; click to explore</div>
+  <div class="row">
+    <div class="sec">runtime adds imports — not generated from .mai</div>
+    <div class="cell mai no-map"><span class="note">( nothing in .mai generates imports —
+  added automatically by the runtime )</span></div>
+    <div class="cell py no-map"><span class="kw">import</span> anthropic
+<span class="kw">import</span> base64
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel</div>
+  </div>
+  <div class="row" data-block="type">
+    <div class="sec">type Summary → class Summary(BaseModel)</div>
+    <div class="cell mai" data-block="type"><span class="kw">type</span> <span class="typ">Summary</span>:
+  title:      <span class="typ">String</span>
+  bullets:    <span class="typ">String[]</span>
+  word_count: <span class="typ">Int</span></div>
+    <div class="cell py" data-block="type"><span class="kw">class</span> <span class="typ">Summary</span>(BaseModel):
+    title: <span class="typ">str</span>
+    bullets: <span class="typ">list</span>[<span class="typ">str</span>]
+    word_count: <span class="typ">int</span></div>
+  </div>
+  <div class="row" data-block="inputs">
+    <div class="sec">workflow + inputs → function signature</div>
+    <div class="cell mai" data-block="inputs"><span class="kw">workflow</span>: SummarisePDF
+
+<span class="kw">inputs</span>:
+  pdf_path:    <span class="typ">File</span>(type=<span class="str">"application/pdf"</span>)
+  prompt:      <span class="typ">String</span>
+  output_lang: <span class="typ">String</span>(default=<span class="str">"english"</span>)</div>
+    <div class="cell py" data-block="inputs"><span class="kw">def</span> <span class="typ">SummarisePDF</span>(
+    pdf_path: <span class="typ">str</span>,
+    prompt: <span class="typ">str</span>,
+    output_lang: <span class="typ">str</span> = <span class="str">"english"</span>
+):</div>
+  </div>
+  <div class="row" data-block="readfile">
+    <div class="sec">tool.ReadFile → open() + base64.b64encode()</div>
+    <div class="cell mai" data-block="readfile">  - <span class="kw">name</span>: load_pdf
+    <span class="kw">use</span>:  <span class="typ">tool.ReadFile</span>
+    <span class="kw">with</span>:
+      path:     <span class="var">$inputs</span>.pdf_path
+      encoding: base64
+    <span class="kw">as</span>: pdf_document</div>
+    <div class="cell py" data-block="readfile">    <span class="kw">with</span> open(pdf_path, <span class="str">"rb"</span>) <span class="kw">as</span> _f:
+        pdf_document = base64.b64encode(
+            _f.read()
+        ).decode(<span class="str">"utf-8"</span>)</div>
+  </div>
+  <div class="row" data-block="template">
+    <div class="sec">tool.TemplateRender → str.replace()</div>
+    <div class="cell mai" data-block="template">  - <span class="kw">name</span>: build_system_prompt
+    <span class="kw">use</span>:  <span class="typ">tool.TemplateRender</span>
+    <span class="kw">with</span>:
+      template: <span class="str">"...Always respond in <span class="var">{{ lang }}</span>."</span>
+      vars:
+        lang: <span class="var">$inputs</span>.output_lang
+    <span class="kw">as</span>: system_prompt</div>
+    <div class="cell py" data-block="template">    system_prompt = <span class="str">'You are a document summariser. Always respond in {{ lang }}. Return ONLY a JSON object with title (string), bullets (list of strings), word_count (int).'</span>
+    system_prompt = system_prompt.replace(<span class="str">"{{ lang }}"</span>, output_lang)</div>
+  </div>
+  <div class="row" data-block="llm">
+    <div class="sec">agent.LLM → anthropic.Anthropic().messages.create()</div>
+    <div class="cell mai" data-block="llm">  - <span class="kw">name</span>: call_llm
+    <span class="kw">use</span>:  <span class="typ">agent.LLM</span>
+    <span class="kw">with</span>:
+      model:      <span class="str">"claude-sonnet-4-5"</span>
+      max_tokens: <span class="num">1024</span>
+      system:     <span class="var">$system_prompt</span>
+      prompt:     <span class="str">"<span class="var">{{ inputs.prompt }}</span>"</span></div>
+    <div class="cell py" data-block="llm">    _client = anthropic.Anthropic()
+    _resp = _client.messages.create(
+        model=<span class="str">"claude-sonnet-4-5"</span>,
+        max_tokens=<span class="num">1024</span>,
+        system=system_prompt,
+        messages=[{
+            <span class="str">"role"</span>: <span class="str">"user"</span>,
+            <span class="str">"content"</span>: [
+                {
+                    <span class="str">"type"</span>: <span class="str">"document"</span>,
+                    <span class="str">"source"</span>: {
+                        <span class="str">"type"</span>: <span class="str">"base64"</span>,
+                        <span class="str">"media_type"</span>: <span class="str">"application/pdf"</span>,
+                        <span class="str">"data"</span>: pdf_document,
+                    }
+                },
+                {
+                    <span class="str">"type"</span>: <span class="str">"text"</span>,
+                    <span class="str">"text"</span>: f<span class="str">"{prompt}"</span>,
+                }
+            ]
+        }]
+    )</div>
+  </div>
+  <div class="row" data-block="returns">
+    <div class="sec">returns: Summary → parse + validate output</div>
+    <div class="cell mai" data-block="returns">    <span class="kw">returns</span>: <span class="typ">Summary</span>
+    <span class="kw">as</span>: llm_response</div>
+    <div class="cell py" data-block="returns">    _raw   = _resp.content[<span class="num">0</span>].text
+    _clean = _raw.replace(<span class="str">"```json"</span>, <span class="str">""</span>).replace(<span class="str">"```"</span>, <span class="str">""</span>).strip()
+    llm_response = <span class="typ">Summary</span>.model_validate_json(_clean)</div>
+  </div>
+  <div class="row" data-block="merge">
+    <div class="sec">tool.MergeObjects → dict</div>
+    <div class="cell mai" data-block="merge">  - <span class="kw">name</span>: build_output
+    <span class="kw">use</span>:  <span class="typ">tool.MergeObjects</span>
+    <span class="kw">with</span>:
+      summary: <span class="var">$llm_response</span>
+    <span class="kw">as</span>: final_result</div>
+    <div class="cell py" data-block="merge">    final_result = {<span class="str">"summary"</span>: llm_response}</div>
+  </div>
+  <div class="row" data-block="output">
+    <div class="sec">output: format: terminal → print to terminal + entry point</div>
+    <div class="cell mai" data-block="output"><span class="kw">output</span>:
+  format: terminal
+  value:  <span class="var">$final_result</span></div>
+    <div class="cell py" data-block="output">    print(<span class="str">"\\n" + "=" * 50</span>)
+    print(<span class="str">"TITLE"</span>)
+    print(<span class="str">"=" * 50</span>)
+    print(final_result[<span class="str">"summary"</span>].title)
+    print(<span class="str">"\\nBULLET POINTS"</span>)
+    <span class="kw">for</span> b <span class="kw">in</span> final_result[<span class="str">"summary"</span>].bullets:
+        print(f<span class="str">"  - {b}"</span>)
+    print(f<span class="str">"\\nWORD COUNT: {final_result['summary'].word_count}"</span>)
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    <span class="kw">import</span> argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(<span class="str">"--pdf"</span>, required=<span class="kw">True</span>, dest=<span class="str">"pdf_path"</span>)
+    parser.add_argument(<span class="str">"--prompt"</span>, required=<span class="kw">True</span>)
+    parser.add_argument(<span class="str">"--output_lang"</span>, default=<span class="str">"english"</span>)
+    args = parser.parse_args()
+    SummarisePDF(
+        pdf_path=args.pdf_path,
+        prompt=args.prompt,
+        output_lang=args.output_lang
+    )</div>
+  </div>
+  <div class="panel" id="panel">
+    <div class="panel-hdr">
+      <span class="panel-title" id="panel-title"></span>
+      <span class="close-btn" id="close-btn">close ✕</span>
+    </div>
+    <div class="panel-body">
+      <div class="panel-col l">
+        <h3>.mai code</h3>
+        <div class="code-block mai-bg" id="panel-mai"></div>
+      </div>
+      <div class="panel-col">
+        <h3>generated Python</h3>
+        <div class="code-block" id="panel-py"></div>
+        <div class="explain" id="panel-explain"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const data={type:{title:"type Summary — output contract",mai:"type Summary:\n  title:      String\n  bullets:    String[]\n  word_count: Int",py:"class Summary(BaseModel):\n    title: str\n    bullets: list[str]\n    word_count: int",explain:"<p>Defines the exact shape the LLM must return. Validated automatically — wrong shape raises a clear error immediately.</p><p><b>String[]</b> becomes <b>list[str]</b>. <b>Int</b> becomes <b>int</b>.</p>"},inputs:{title:"workflow + inputs — function signature",mai:'workflow: SummarisePDF\n\ninputs:\n  pdf_path:    File(type="application/pdf")\n  prompt:      String\n  output_lang: String(default="english")',py:'def SummarisePDF(\n    pdf_path: str,\n    prompt: str,\n    output_lang: str = "english"\n):',explain:"<p><b>workflow:</b> becomes the function name. <b>inputs:</b> becomes typed function arguments.</p><p><b>default=\"english\"</b> becomes a Python default argument.</p>"},readfile:{title:"tool.ReadFile — load PDF as base64",mai:"- name: load_pdf\n  use:  tool.ReadFile\n  with:\n    path:     $inputs.pdf_path\n    encoding: base64\n  as: pdf_document",py:'with open(pdf_path, "rb") as _f:\n    pdf_document = base64.b64encode(\n        _f.read()\n    ).decode("utf-8")',explain:"<p>Opens the PDF, reads the bytes, encodes as <b>base64</b> — the format the Anthropic API expects.</p><p>Stored as <b>pdf_document</b>, read by later steps via <b>$pdf_document</b>.</p>"},template:{title:"tool.TemplateRender — fill {{ }} placeholders",mai:'- name: build_system_prompt\n  use:  tool.TemplateRender\n  with:\n    template: "...Always respond in {{ lang }}."\n    vars:\n      lang: $inputs.output_lang\n  as: system_prompt',py:"system_prompt = 'You are a document summariser. Always respond in {{ lang }}. Return ONLY a JSON object with title (string), bullets (list of strings), word_count (int).'\nsystem_prompt = system_prompt.replace(\"{{ lang }}\", output_lang)",explain:"<p><b>{{ lang }}</b> gets replaced with <b>$inputs.output_lang</b> — defaults to \"english\".</p><p>The template also instructs the LLM to return only JSON, making <b>returns: Summary</b> reliable.</p>"},llm:{title:"agent.LLM — call the Anthropic API",mai:'- name: call_llm\n  use:  agent.LLM\n  with:\n    model:      "claude-sonnet-4-5"\n    max_tokens: 1024\n    system:     $system_prompt\n    prompt:     "{{ inputs.prompt }}"',py:'_client = anthropic.Anthropic()\n_resp = _client.messages.create(\n    model="claude-sonnet-4-5",\n    max_tokens=1024,\n    system=system_prompt,\n    messages=[{"role": "user",\n      "content": [\n        {"type": "document", "source": {\n          "type": "base64",\n          "media_type": "application/pdf",\n          "data": pdf_document}},\n        {"type": "text", "text": f"{prompt}"}\n      ]}]\n)',explain:"<p>The actual API call to Claude. PDF sent as a native <b>document</b> block so Claude reads it directly.</p><p>API key read from <b>ANTHROPIC_API_KEY</b> environment variable — never in the .mai file.</p>"},returns:{title:"returns: Summary — parse and validate",mai:"    returns: Summary\n    as: llm_response",py:"_raw   = _resp.content[0].text\n_clean = _raw.replace(\"```json\", \"\").replace(\"```\", \"\").strip()\nllm_response = Summary.model_validate_json(_clean)",explain:"<p>Without <b>returns:</b> you write this parsing code every time. The runtime strips fences, parses JSON, validates against the type.</p><p><b>llm_response</b> is now a typed object — access <b>.title</b>, <b>.bullets</b>, <b>.word_count</b> directly.</p>"},merge:{title:"tool.MergeObjects — package the result",mai:"- name: build_output\n  use:  tool.MergeObjects\n  with:\n    summary: $llm_response\n  as: final_result",py:'final_result = {"summary": llm_response}',explain:"<p>Packages the result into a dict. In Python just a dict literal.</p><p>Stored as <b>final_result</b>, passed to the <b>output:</b> block.</p>"},output:{title:"output: format: terminal — print and run",mai:"output:\n  format: terminal\n  value:  $final_result",py:"    print(\"\\n\" + \"=\" * 50)\n    print(\"TITLE\")\n    print(\"=\" * 50)\n    print(final_result[\"summary\"].title)\n    print(\"\\nBULLET POINTS\")\n    for b in final_result[\"summary\"].bullets:\n        print(f\"  - {b}\")\n    print(f\"\\nWORD COUNT: {final_result['summary'].word_count}\")\n\nif __name__ == \"__main__\":\n    import argparse\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--pdf\", required=True, dest=\"pdf_path\")\n    parser.add_argument(\"--prompt\", required=True)\n    parser.add_argument(\"--output_lang\", default=\"english\")\n    args = parser.parse_args()\n    SummarisePDF(pdf_path=args.pdf_path, prompt=args.prompt, output_lang=args.output_lang)",explain:"<p><b>format: terminal</b> generates print statements that display the summary directly in the terminal.</p><p>Also generates the <b>if __name__ == \"__main__\":</b> entry point so the file is fully runnable with <b>--pdf</b> and <b>--prompt</b> flags.</p><p>Other formats: <b>txt</b> saves to a file, <b>json</b> prints structured JSON.</p>"}};
+const cells=document.querySelectorAll('.cell[data-block]');
+const panel=document.getElementById('panel');
+const panelTitle=document.getElementById('panel-title');
+const panelMai=document.getElementById('panel-mai');
+const panelPy=document.getElementById('panel-py');
+const panelExplain=document.getElementById('panel-explain');
+const closeBtn=document.getElementById('close-btn');
+let active=null;
+cells.forEach(cell=>{
+  cell.addEventListener('mouseenter',()=>{if(active)return;const id=cell.dataset.block;cells.forEach(c=>{if(c.dataset.block===id){c.classList.remove('dim');c.classList.add(c.classList.contains('mai')?'hi-mai':'hi-py');}else{c.classList.add('dim');c.classList.remove('hi-mai','hi-py');}});});
+  cell.addEventListener('mouseleave',()=>{if(active)return;cells.forEach(c=>c.classList.remove('dim','hi-mai','hi-py'));});
+  cell.addEventListener('click',()=>{const id=cell.dataset.block;const d=data[id];if(!d)return;active=id;cells.forEach(c=>{if(c.dataset.block===id){c.classList.remove('dim');c.classList.add(c.classList.contains('mai')?'hi-mai':'hi-py');}else{c.classList.add('dim');c.classList.remove('hi-mai','hi-py');}});panelTitle.textContent=d.title;panelMai.textContent=d.mai;panelPy.textContent=d.py;panelExplain.innerHTML=d.explain;panel.classList.add('open');panel.scrollIntoView({behavior:'smooth',block:'nearest'});});
+});
+closeBtn.addEventListener('click',()=>{active=null;panel.classList.remove('open');cells.forEach(c=>c.classList.remove('dim','hi-mai','hi-py'));});
+</script>
+</body>
+</html>

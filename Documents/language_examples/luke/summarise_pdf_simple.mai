@@ -1,0 +1,49 @@
+type Summary:
+  title:      String
+  bullets:    String[]
+  word_count: Int
+
+workflow: SummarisePDF
+
+inputs:
+  pdf_path:    File(type="application/pdf")
+  prompt:      String
+  output_lang: String(default="english")
+
+steps:
+
+  - name: load_pdf
+    use:  tool.ReadFile
+    with:
+      path:     $inputs.pdf_path
+      encoding: base64
+    as: pdf_document
+
+  - name: build_system_prompt
+    use:  tool.TemplateRender
+    with:
+      template: "You are a document summariser. Always respond in {{ lang }}. Return ONLY a JSON object with title (string), bullets (list of strings), word_count (int)."
+      vars:
+        lang: $inputs.output_lang
+    as: system_prompt
+
+  - name: call_llm
+    use:  agent.LLM
+    with:
+      model:      "claude-sonnet-4-5"
+      max_tokens: 1024
+      system:     $system_prompt
+      prompt:     "{{ inputs.prompt }}"
+    returns: Summary
+    as: llm_response
+
+/// overflødigt.. viser bare .MergeObjects ///
+  - name: build_output
+    use:  tool.MergeObjects
+    with:
+      summary: $llm_response
+    as: final_result
+
+output:
+  format: terminal
+  value:  $final_result

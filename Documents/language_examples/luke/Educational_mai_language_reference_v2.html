@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>.mai language reference</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#11111b;color:#cdd6f4;font-family:system-ui,sans-serif;font-size:14px;padding:2rem;line-height:1.6}
+h1{font-size:22px;font-weight:500;color:#cba6f7;margin-bottom:4px}
+.subtitle{font-size:13px;color:#6c7086;margin-bottom:2rem}
+.grid{display:flex;flex-direction:column;gap:1rem}
+.card{background:#181825;border:0.5px solid #313244;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s}
+.card:hover{border-color:#534ab7}
+.card.open{border-color:#534ab7}
+.card-header{display:flex;align-items:center;gap:12px;padding:14px 18px}
+.keyword{font-family:'Consolas','Monaco',monospace;font-size:13px;font-weight:500;padding:3px 10px;border-radius:5px;background:#26215C;color:#cba6f7;white-space:nowrap}
+.keyword.orange{background:#3d1f00;color:#fab387}
+.keyword.teal{background:#04342C;color:#89dceb}
+.keyword.green{background:#04342C;color:#5DCAA5}
+.card-title{font-size:14px;font-weight:500;color:#cdd6f4}
+.card-short{font-size:13px;color:#6c7086;margin-left:auto;white-space:nowrap}
+.arrow{margin-left:8px;color:#45475a;font-size:12px;transition:transform .2s}
+.card.open .arrow{transform:rotate(90deg)}
+.card-body{display:none;border-top:0.5px solid #313244;padding:18px;grid-template-columns:1fr 1fr;gap:16px}
+.card.open .card-body{display:grid}
+.explain{font-size:13px;color:#a6adc8;line-height:1.75;margin-top:12px}
+.explain b{color:#cdd6f4;font-weight:500}
+.explain p{margin-bottom:8px}.explain p:last-child{margin-bottom:0}
+.cw{background:#1e1e2e;border-radius:6px;padding:14px 16px;font-family:'Consolas','Monaco',monospace;font-size:12px;line-height:1.8;overflow-x:auto;border:0.5px solid #313244}
+.cw.mai{background:#1a1a2e}
+.cl{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#45475a;margin-bottom:8px}
+.kw{color:#cba6f7;font-weight:bold}.str{color:#a6e3a1}.var{color:#fab387}.typ{color:#89dceb}.cm{color:#585870;font-style:italic}.num{color:#f9e2af}
+</style>
+</head>
+<body>
+<h1>.mai language reference</h1>
+<p class="subtitle">Every keyword in the .mai DSL — what it does and the Python it generates. Click any card to expand.</p>
+<div class="grid" id="g"></div>
+<script>
+const cards=[
+{kw:"type",klass:"",title:"Declare the shape of an LLM output",short:"type Summary: ...",
+mai:`<span class="kw">type</span> <span class="typ">Summary</span>:\n  title:      <span class="typ">String</span>\n  bullets:    <span class="typ">String[]</span>\n  word_count: <span class="typ">Int</span>`,
+py:`<span class="kw">class</span> <span class="typ">Summary</span>(BaseModel):\n    title: <span class="typ">str</span>\n    bullets: <span class="typ">list</span>[<span class="typ">str</span>]\n    word_count: <span class="typ">int</span>`,
+explain:`<p>Defines the exact shape the LLM must return. The runtime validates the response automatically — wrong shape raises a clear error immediately.</p><p><b>String[]</b> becomes <b>list[str]</b>. <b>Int</b> becomes <b>int</b>.</p>`},
+
+{kw:"workflow",klass:"",title:"Names the workflow — the entry point",short:"workflow: SummarisePDF",
+mai:`<span class="kw">workflow</span>: SummarisePDF`,
+py:`<span class="kw">def</span> <span class="typ">SummarisePDF</span>(...):`,
+explain:`<p>Names the workflow. The runtime generates a Python function with this name.</p><p>Everything inside <b>steps:</b> becomes the body of this function, executed top to bottom.</p>`},
+
+{kw:"inputs",klass:"",title:"Declare what the workflow accepts",short:"inputs: pdf_path, prompt, ...",
+mai:`<span class="kw">inputs</span>:\n  pdf_path:    <span class="typ">File</span>(type=<span class="str">"application/pdf"</span>)\n  prompt:      <span class="typ">String</span>\n  output_lang: <span class="typ">String</span>(default=<span class="str">"english"</span>)`,
+py:`<span class="kw">def</span> <span class="typ">SummarisePDF</span>(\n    pdf_path: <span class="typ">str</span>,\n    prompt: <span class="typ">str</span>,\n    output_lang: <span class="typ">str</span> = <span class="str">"english"</span>\n):`,
+explain:`<p>Each input becomes a typed function argument. <b>default=</b> becomes a Python default argument.</p><p>Inside the workflow accessed via <b>$inputs.name</b>. The <b>$</b> means "read this value from the inputs namespace".</p>`},
+
+{kw:"steps",klass:"",title:"The ordered list of tasks to execute",short:"steps: - name: ... use: ...",
+mai:`<span class="kw">steps</span>:\n\n  - <span class="kw">name</span>: load_pdf\n    <span class="kw">use</span>:  <span class="typ">tool.ReadFile</span>\n    <span class="kw">with</span>:\n      path: <span class="var">$inputs</span>.pdf_path\n    <span class="kw">as</span>: pdf_document\n\n  - <span class="kw">name</span>: call_llm\n    <span class="kw">use</span>:  <span class="typ">agent.LLM</span>\n    ...`,
+py:`<span class="cm"># step 1</span>\n<span class="kw">with</span> open(pdf_path, <span class="str">"rb"</span>) <span class="kw">as</span> _f:\n    pdf_document = base64.b64encode(\n        _f.read()).decode(<span class="str">"utf-8"</span>)\n\n<span class="cm"># step 2</span>\n_client = anthropic.Anthropic()\n_resp = _client.messages.create(...)`,
+explain:`<p>Each step has a <b>name</b>, <b>use</b> (which tool), <b>with</b> (parameters), and <b>as</b> (name the output).</p><p>Steps run sequentially — one finishes, then the next starts.</p>`},
+
+{kw:"$variable",klass:"orange",title:"Reference the output of a previous step",short:"$pdf_document, $inputs.prompt",
+mai:`<span class="cm"># defining — no $ (names the output)</span>\n<span class="kw">as</span>: pdf_document\n\n<span class="cm"># using — with $ (reads that value)</span>\ndata: <span class="var">$pdf_document</span>\n\n<span class="cm"># two namespaces:</span>\n<span class="var">$inputs</span>.pdf_path  <span class="cm"># from inputs:</span>\n<span class="var">$pdf_document</span>     <span class="cm"># from a step as:</span>`,
+py:`<span class="cm"># as: pdf_document → variable assignment</span>\npdf_document = base64.b64encode(...)\n\n<span class="cm"># $pdf_document → just the variable name</span>\ndata = pdf_document\n\n<span class="cm"># $inputs.pdf_path → function argument</span>\n<span class="kw">with</span> open(pdf_path, <span class="str">"rb"</span>) <span class="kw">as</span> _f: ...`,
+explain:`<p><b>Defining</b> uses no $ — the <b>as:</b> keyword names the output.</p><p><b>Using</b> uses $ — the runtime resolves it to the actual value.</p><p>Same idea as bash: <b>x="hello"</b> to define, <b>echo $x</b> to use.</p>`},
+
+{kw:"as",klass:"",title:"Name the output of a step",short:"as: pdf_document",
+mai:`- <span class="kw">name</span>: load_pdf\n  <span class="kw">use</span>:  <span class="typ">tool.ReadFile</span>\n  <span class="kw">with</span>:\n    path: <span class="var">$inputs</span>.pdf_path\n  <span class="kw">as</span>: pdf_document`,
+py:`pdf_document = base64.b64encode(\n    _f.read()\n).decode(<span class="str">"utf-8"</span>)`,
+explain:`<p><b>as:</b> names a step's output so later steps can reference it with <b>$</b>.</p><p>Without <b>as:</b> the result is discarded. Every step whose output is needed later must have an <b>as:</b>.</p>`},
+
+{kw:"returns",klass:"",title:"Validate and type the LLM output",short:"returns: Summary",
+mai:`- <span class="kw">name</span>: call_llm\n  <span class="kw">use</span>:  <span class="typ">agent.LLM</span>\n  <span class="kw">with</span>: ...\n  <span class="kw">returns</span>: <span class="typ">Summary</span>\n  <span class="kw">as</span>: llm_response`,
+py:`_raw   = _resp.content[<span class="num">0</span>].text\n_clean = _raw.replace(<span class="str">"&#96;&#96;&#96;json"</span>, <span class="str">""</span>).strip()\nllm_response = <span class="typ">Summary</span>.model_validate_json(\n    _clean\n)`,
+explain:`<p>The biggest win over plain Python. Without <b>returns:</b> you write this parsing code every time.</p><p>The runtime strips markdown fences, parses JSON, validates against the declared type. Wrong shape — clear error immediately.</p>`},
+
+{kw:"{{ }}",klass:"orange",title:"Inject a variable into a prompt string",short:'"Respond in {{ lang }}"',
+mai:`<span class="kw">use</span>: <span class="typ">tool.TemplateRender</span>\n<span class="kw">with</span>:\n  template: <span class="str">"Respond in <span class="var">{{ lang }}</span>."</span>\n  vars:\n    lang: <span class="var">$inputs</span>.output_lang`,
+py:`system_prompt = <span class="str">"Respond in {{ lang }}."</span>\nsystem_prompt = system_prompt.replace(\n    <span class="str">"{{ lang }}"</span>, output_lang\n)\n<span class="cm"># result: "Respond in english."</span>`,
+explain:`<p><b>{{ }}</b> is a placeholder. <b>tool.TemplateRender</b> replaces it with the matching value from <b>vars:</b>.</p><p>Keeps prompts clean — no Python f-strings or string concatenation needed.</p>`},
+
+{kw:"tool.*",klass:"teal",title:"Built-in utility steps registered in the runtime",short:"tool.ReadFile, tool.TemplateRender, ...",
+mai:`<span class="typ">tool.ReadFile</span>       <span class="cm"># read a file</span>\n<span class="typ">tool.TemplateRender</span>  <span class="cm"># fill {{ }} templates</span>\n<span class="typ">tool.MergeObjects</span>    <span class="cm"># combine outputs</span>`,
+py:`TOOLS = {\n    <span class="str">"tool.ReadFile"</span>:      read_file,\n    <span class="str">"tool.TemplateRender"</span>: template_render,\n    <span class="str">"tool.MergeObjects"</span>:   merge_objects,\n}`,
+explain:`<p><b>tool.*</b> steps are small Python functions registered in the runtime once. The .mai file just calls them by name.</p><p>Add new tools by registering a new function — no changes to the .mai language needed.</p>`},
+
+{kw:"agent.LLM",klass:"teal",title:"Make a call to the LLM",short:"use: agent.LLM",
+mai:`- <span class="kw">name</span>: call_llm\n  <span class="kw">use</span>:  <span class="typ">agent.LLM</span>\n  <span class="kw">with</span>:\n    model:      <span class="str">"claude-sonnet-4-5"</span>\n    max_tokens: <span class="num">1024</span>\n    system:     <span class="var">$system_prompt</span>\n    prompt:     <span class="str">"<span class="var">{{ inputs.prompt }}</span>"</span>\n  <span class="kw">returns</span>: <span class="typ">Summary</span>\n  <span class="kw">as</span>: llm_response`,
+py:`_client = anthropic.Anthropic()\n_resp = _client.messages.create(\n    model=<span class="str">"claude-sonnet-4-5"</span>,\n    max_tokens=<span class="num">1024</span>,\n    system=system_prompt,\n    messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>,\n               <span class="str">"content"</span>: [...]}]\n)`,
+explain:`<p>The core agent step — makes the actual API call to Claude.</p><p>API key read from <b>ANTHROPIC_API_KEY</b> environment variable — never in the .mai file. Combine with <b>returns:</b> for typed, validated output.</p>`},
+
+{kw:"output",klass:"green",title:"What the workflow produces and how to present it",short:"output: format: terminal",
+mai:`<span class="kw">output</span>:\n  format: terminal\n  value:  <span class="var">$final_result</span>`,
+py:`    print(<span class="str">"TITLE"</span>)\n    print(final_result[<span class="str">"summary"</span>].title)\n    print(<span class="str">"BULLET POINTS"</span>)\n    <span class="kw">for</span> b <span class="kw">in</span> final_result[<span class="str">"summary"</span>].bullets:\n        print(f<span class="str">"  - {b}"</span>)\n\n<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:\n    <span class="cm"># entry point generated automatically</span>`,
+explain:`<p><b>format:</b> defines how the result is presented. The runtime generates the right Python for each format.</p><p><b>terminal</b> — prints to the console. <b>txt</b> — saves to a text file. <b>json</b> — prints structured JSON. <b>pdf</b> — generates a PDF file.</p><p>The entry point (<b>if __name__ == "__main__":</b>) is also generated so the file is immediately runnable.</p>`},
+];
+
+const g=document.getElementById('g');
+cards.forEach(c=>{
+  g.innerHTML+=`<div class="card" onclick="toggle(this)">
+  <div class="card-header">
+    <span class="keyword ${c.klass}">${c.kw}</span>
+    <span class="card-title">${c.title}</span>
+    <span class="card-short">${c.short}</span>
+    <span class="arrow">›</span>
+  </div>
+  <div class="card-body">
+    <div><div class="cl">.mai</div><div class="cw mai">${c.mai}</div></div>
+    <div><div class="cl">generated Python</div><div class="cw">${c.py}</div><div class="explain">${c.explain}</div></div>
+  </div>
+</div>`;
+});
+
+function toggle(card){
+  const isOpen=card.classList.contains('open');
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('open'));
+  if(!isOpen)card.classList.add('open');
+}
+</script>
+</body>
+</html>
