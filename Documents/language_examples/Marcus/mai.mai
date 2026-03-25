@@ -1,0 +1,78 @@
+# 1. Define the Engine
+Resource MainBrain { provider: "openai", model: "gpt-4o" }
+
+# 2.
+Agent Director {
+  resource: MainBrain
+  prompt: """
+    Analyze the user's intent: {{query}}
+    Write a strict instruction set for a summarizer agent. 
+    Dictate the required tone, personality, and specific focus areas.
+  """
+}
+
+Agent Reader {
+  resource: MainBrain
+  system_retries: 3
+  tools: [ReadPDF, #in future we could have SearchDB for example]
+  prompt: """
+    Follow these instructions carefully: {{Director.output}}
+    
+    Document text: {{ReadPDF(file_path)}}
+    
+    Previous feedback to fix (if any): {{Evaluator.feedback}}
+  """
+}
+
+Agent Evaluator {
+  resource: MainBrain
+  prompt: """
+    Did Reader follow Director's instructions?
+    Instructions: {{Director.output}}
+    Summary: {{Reader.output}}
+  """
+  # This tells the compiler to force a structured JSON output
+  schema: { passed: boolean, feedback: string } 
+}
+
+# 3. Define the Flow and the Cycle
+Flow DocumentSummarizer (query: string, file_path: string):
+  
+  query >> Director >> Reader >> Evaluator
+
+  Route on Evaluator.passed:
+    True  >> Exit(Reader.output)
+    False >> Reader (max_cycles: 3, inject: Evaluator.feedback)
+  
+
+
+
+
+
+-----------------------------------------------------------------------
+-----------------------------------------------------------------------
+-------------------- IDEAS FOR FURTHER DEVELOPOMENT--------------------
+-----------------------------------------------------------------------
+-----------------------------------------------------------------------
+
+agent types
+primitives
+type checking
+
+fall back
+retries
+routing (condtitional)
+parallel
+passing conversation to next agent
+- when reaching a certain length maybe an agent summarizing to shrink?
+
+keywords:
+schema -> custom types. compiles to pedantic models
+source -> idk
+ai -> function where ai does something
+
+
+provider
+transform
+agent
+output
