@@ -1,5 +1,14 @@
-Agent claude1 = Anthropic("claude-sonnet-4-6", API_KEY_NAME)
-Agent claude2 = Anthropic("claude-haiku-4-5-20251001", API_KEY_NAME)
+Agent coder = Anthropic(
+    model="claude-sonnet-4-6", 
+    api_key=API_KEY_NAME,
+    system="You are a helpful assistant that can write code. You will be given a prompt and you should write code to solve the problem. "
+    )
+
+Agent code_reviewer = Anthropic(
+    model="claude-haiku-4-5-20251001", 
+    api_key=API_KEY_NAME,
+    system=You are a helpful assistant that can review code. You will be given a prompt and some code. You should review the code and provide feedback on how to improve it
+    )
 
 func claude_code(Text text) -> Code:
     return claude1.prompt(text, maxtokens=10000)
