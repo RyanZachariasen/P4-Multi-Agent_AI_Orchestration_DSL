@@ -6,13 +6,13 @@ type loc = { file: string; line: int; col: int }
 type provider = Anthropic | OpenAI | Gemini | Grok
 
 type typ =  
-  | TText               (** raw text *)  
+  | TText              (** raw text *)  
   | TInt                   (** compiler generates int() *)  
   | TFloat             (** compiler generates float() *)  
   | TBool                 (** compiler generates bool parse *)  
   | TCode                  (** text + fence stripping; Code <= Text *)  
   | TFile             (** file path for builtin tools *)  
-  | TNamed of name 
+  | TRecord of name 
 
 type constant =  
   | CText of string                (** raw text *)  
@@ -21,7 +21,7 @@ type constant =
   | CBool of bool                (** compiler generates bool parse *)  
   | CCode of string                 (** text + fence stripping; Code <= Text *)  
   | CFile of string                   (** file path for builtin tools *)  
-  | CNamed of name              (** user-declared record → Pydantic *)  
+  | CRecord of name              (** user-declared record → Pydantic *)  
   
 type binop = Add | Sub | Mul | Div | Concat  
   
@@ -76,4 +76,4 @@ type program = {
   prog_workflow: workflow;  
 }
 
-and file = expr list
+type file = expr list

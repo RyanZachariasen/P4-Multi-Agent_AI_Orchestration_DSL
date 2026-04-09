@@ -1,5 +1,11 @@
 %{
+  open Parsing
   open Ast
+  (* CREATE HASHTABLE FOR FUNCTIONS *)
+    (* Check if exists *)
+    (* Check for arity *)
+    (* assign type *)
+
 %}
 
 %token <Ast.constant> CONST
@@ -12,16 +18,29 @@
 /* Precedence rules to handle ambiguity (Week 4-5 content) */
 %left PLUS MINUS
 %left TIMES DIV
-%start file
-%type <Ast.file> file %%
+%start <Ast.file> file
+%%
 
 file:
-| s = nonempty_list(expr); EOF { s }
+| el = list(expr); EOF { el };
 
 expr:
-| c = CONST { EConst c }
-| e1 = expr PLUS e1 = expr { EBinOp (Add, e1, e2)}
-| e1 = expr; MINUS; e1 = expr { EBinOp (Sub, e1, e2)}
-| e1 = expr; TIMES; e1 = expr; { EBinOp (Mul, e1, e2)}
-| e1 = expr; DIV; e1 = expr; { EBinOp (Div, e1, e2)}
-| e1 = expr; CONCAT; e1 = expr; { EBinOp (Concat, e1, e2)}
+| c = constant { EConst c }
+| e1 = expr; opperand = opperand; e2 = expr { EBinOp (opperand, e1, e2)}
+;
+
+opperand:
+| PLUS {Add} | MINUS {Sub} |  TIMES {Mul} | DIV {Div} | CONCAT {Concat}
+
+constant:
+| c = INT { CInt c }
+| c = TEXT { CText c }
+| c = FLOAT { CFloat c }
+| c = BOOL { CBool c }
+| c = CODE { CCode c }
+| c = FILE { CFile c }
+| c = RECORD { CRecord c }
+;
+
+stmt:
+| c = SL
