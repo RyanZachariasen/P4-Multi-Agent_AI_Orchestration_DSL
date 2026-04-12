@@ -10,7 +10,7 @@
       [
         "def", DEF; "if", IF; "else", ELSE;
         
-        "workflow", WORKFLOW; "resource", RESOURCE; "func", "FUNC";
+        "workflow", WORKFLOW; "resource", RESOURCE; "func", FUNC;
         "type", TYPE; "on", ON;
 
         "anthropic", ANTHROPIC; "openai", OPENAI; "gemini", GEMINI;
@@ -52,27 +52,24 @@ let space = ' ' | '\t'
 rule next_tokens = parse
   | '\n'    { new_line lexbuf; update_stack (indentation lexbuf) }
   | (space | comment)+
-            { next_tokens lexbuf }
-  | ident as id { id_or_kwd id }
-  | "/*"
-      { comment lexbuf; token lexbuf }
-  | "if"            { IF }
-  | "else"          { ELSE }
-  |','              {COMMA}
-  |'.'              {DOT}
-  | '/'             { DIV }
-  | '('             { LP }
-  | ')'             { RP }
-  | '{'             { LBRACE }
-  | '}'             { RBRACE }
+                    { next_tokens lexbuf }
+  | ident as id     { id_or_kwd id }
+  | "/*"            { comment lexbuf; next_token lexbuf }
+  | "\"\"\""        { [CST (Cstring (triple_string lexbuf))] }
+  |','              { [COMMA] }
+  |'.'              { [DOT] }
+  |'='              { [ASSIGN] }
+  | '('             { [LP] }
+  | ')'             { [RP] }
+  | '{'             { [LBRACE] }
+  | '}'             { [RBRACE] }
   | _               { raise (Lexical_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
-  | ':'             {COLON}
-  | '"'             { CST (Cstring (string lexbuf)) }
-  | "->"           {ARROW}
+  | ':'             { [COLON] }
+  | '"'             { [CST (Cstring (string lexbuf))] }
+  | "->"            {ARROW}
   | integer as s
             { try [CST (Cint (Int64.of_string s))]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
-  | ident as id     { IDENT id } (*Double chekc if this is python ident*)
   | eof             { EOF }
 
 
@@ -82,17 +79,10 @@ and string = parse
 	Buffer.reset string_buffer;
 	s }
   | "\"\"\""  { [CST (Cstring (triple_string lexbuf))] } 
-  | "\\n"
-      { Buffer.add_char string_buffer '\n';
-	string lexbuf }
-  | "\\\""
-      { Buffer.add_char string_buffer '"';
-	string lexbuf }
-  | _ as c
-      { Buffer.add_char string_buffer c;
-	string lexbuf }
-  | eof
-      { raise (Lexing_error "unterminated string") }
+  | "\\n" { Buffer.add_char string_buffer '\n'; string lexbuf }
+  | "\\\"" { Buffer.add_char string_buffer '"'; string lexbuf }
+  | _ as c { Buffer.add_char string_buffer c; string lexbuf }
+  | eof { raise (Lexing_error "unterminated string") }
 
   and comment = parse
   | "*/" { () }
