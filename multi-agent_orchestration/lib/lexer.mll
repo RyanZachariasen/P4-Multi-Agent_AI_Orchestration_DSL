@@ -7,9 +7,21 @@
   let id_or_kwd =
     let h = Hashtbl.create 32 in
     List.iter (fun (s, tok) -> Hashtbl.add h s tok)
-      ["def", DEF; "if", IF; "else", ELSE;
-       "True", CST (Cbool true);
-       "False", CST (Cbool false);];
+      [
+        "def", DEF; "if", IF; "else", ELSE;
+        
+        "workflow", WORKFLOW; "resource", RESOURCE; "func", "FUNC";
+        "type", TYPE; "on", ON;
+
+        "anthropic", ANTHROPIC; "openai", OPENAI; "gemini", GEMINI;
+
+        "string", STRING; "int", INT; "double", DOUBLE; "bool", BOOL;
+        "Text", TEXT; "File", FILE; "Code", CODE;
+
+        "True", CST (Cbool true); "False", CST (Cbool false);
+        "builtin", BUILTIN;
+        
+        ];
    fun s -> try Hashtbl.find h s with Not_found -> IDENT s
 
   let string_buffer = Buffer.create 1024
@@ -54,27 +66,10 @@ rule next_tokens = parse
   | '{'             { LBRACE }
   | '}'             { RBRACE }
   | _               { raise (Lexical_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
-  | "type"          {TYPE}
-  | "func"          {FUNC}
-  | "resource"     {RESOURCE}
-  | "Text"         {TEXT}
-  | "File"         {TEXT}
-  | "Code"         {CODE}
-  | "on resource"   {ON_RESOURCE}
   | ':'             {COLON}
   | '"'             { CST (Cstring (string lexbuf)) }
   | "->"           {ARROW}
-  | "string"       {STRING}
-  | "int"          {INT}
-  | "workflow"     {WORKFLOW}
-  | "print"        {PRINT}
-  | "Bool"         {BOOL}
-  | "anthropic"    {ANTHROPIC}
-  | "openai"       {OPENAI}
-  | "gemini"       {GEMINI}
-  | "double"       {DOUBLE}
-  | "builtin"       {BUILTIN}
- | integer as s
+  | integer as s
             { try [CST (Cint (Int64.of_string s))]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
   | ident as id     { IDENT id } (*Double chekc if this is python ident*)
