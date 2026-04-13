@@ -1,4 +1,4 @@
-open ast
+open Ast
 
 (* Type til string*)
 let string_of_typ = function
