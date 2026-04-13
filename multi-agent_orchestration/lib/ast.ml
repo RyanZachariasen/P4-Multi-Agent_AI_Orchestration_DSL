@@ -22,7 +22,7 @@ type expr =
           read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
   | EField  of expr * name  (** verdict.score *)
   | EBinOp  of binop * expr * expr  
-  
+
 and constant =  
   | CText of string                (** raw text *)  
   | CInt of int                  (** compiler generates int() *)  
@@ -34,7 +34,6 @@ and constant =
 
 and binop = Add | Sub | Mul | Div | Concat  
 
-
 type stmt =  
   | SLet   of name * expr      (** x = f(y) on R *)  
   | SPrint of expr  
@@ -42,10 +41,16 @@ type stmt =
   | SReadFile of expr      (** write_file(path, content) *)  
   
 type resourceDeclaration = {  
-  rs_name: name; rs_provider: provider;  
-  rs_model: string; max_tokens: int; system_prompt: string; rs_loc: location;
+  resourceName: name;
+  resourceProvider: provider;  
+  resourceModel: string;
+  maxTokens: int option;
+  systemPrompt: string option; 
+  resourceLocation: location;
 }  (* add more stuff like max-tokens, system prompt*)
-  
+
+
+
 type funcDeclaration = {
   funcName: name;  
   funcParams: (name * typ) list;   (** typed parameters *)  
@@ -55,18 +60,18 @@ type funcDeclaration = {
   funcBuiltin: bool;                (** true for read_pdf etc *)  
   funcLocation: location;  
 }  
-  
+
 type typeDeclaration = {  
   tdName: name;  
   tdFields: (name * typ) list;  
   tdLocation: location;  
-}  
-  
+}
+
 type declaration =  
   | DResource of resourceDeclaration  
   | DFunc of funcDeclaration  
   | DType of typeDeclaration  
-  
+
 type workflow = {  
   wf_name: name;  
   wf_params: (name * typ) list;  

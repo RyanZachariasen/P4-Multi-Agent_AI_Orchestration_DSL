@@ -20,6 +20,7 @@
 
 %token COMMA ASSIGN LBRACE RBRACE RECORD DOT PRINT LPAREN RPAREN WRITE READ
 %token PLUS MINUS TIMES DIV CONCAT
+%token RESOURCE ANTHROPIC OPENAI GEMINI GROK
 %token EOF
 
 /* Precedence rules to handle ambiguity (Week 4-5 content) */
@@ -50,6 +51,7 @@ constant:
 | const = FILE { CFile const }
 | RECORD; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, recordField) ; RBRACE; { CRecord (ident, exprList) }
 ;
+
 recordField:
 | ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
 ;
@@ -58,4 +60,41 @@ stmt:
 | ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
 | PRINT; LPAREN; expr=expr RPAREN; { SPrint expr }
 | WRITE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { SWriteFile(file, expr )}
-| READ ; LRPAREN ; file = FILE ; RPAREN { SReadFile file }
+| READ ; LPAREN ; file = FILE ; RPAREN { SReadFile file }
+
+declaration:
+| RESOURCE ; ident = IDENT ; ASSIGN ; provider = provider ; LPAREN ; model = TEXT optionals = resourceOptionals ; RPAREN  { 
+    let (maxTokens, systemPrompt) = optionals in
+    { resourceName = ident, 
+      resourceProvider = provider, 
+      resourceModel = model, 
+      maxTokens = maxTokens, 
+      systemPrompt = systemPrompt, 
+      resourceLocation = { $startpos.pos_fname; $startpos.pos_lnum, $endpos.pos_cnum }
+    } 
+  }
+
+resourceOptionals: 
+| { (None, None) }
+
+| COMMA ; ident = IDENT ; ASSIGN ; systemPrompt = TEXT; rest = resourceOptionals {
+  let (maxTokens, _) = rest in
+  (maxTokens, systemPrompt) }
+
+| COMMA ; ident = IDENT ; ASSIGN ; maxTokens = INT; rest = resourceOptionals {
+  let (_, systemPrompt) = rest in
+  (maxTokens, systemPrompt) }
+
+provider:
+| GROK { Grok }
+| OPENAI { OpenAI }
+| ANTHROPIC { Anthropic }
+| GEMINI { Gemini }
+
+
+
+
+(* 
+Resource agent1 = OpenAI("model", 10000) 
+
+*)
