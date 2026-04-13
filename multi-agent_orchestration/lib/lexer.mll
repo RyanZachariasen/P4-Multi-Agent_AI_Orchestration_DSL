@@ -4,6 +4,8 @@
   open Parser
   exception Lexing_error of string
 
+
+(*--------------------Keywords--------------------*)
   let id_or_kwd =
     let h = Hashtbl.create 32 in
     List.iter (fun (s, tok) -> Hashtbl.add h s tok)
@@ -23,6 +25,8 @@
         
         ];
    fun s -> try Hashtbl.find h s with Not_found -> IDENT s
+(*----------------------------------------------*)
+
 
   let string_buffer = Buffer.create 1024
 
@@ -42,7 +46,7 @@
       NEWLINE :: unindent n
 }
 
-(*-----------REGEX-----------*)
+(*----------------------REGEX----------------------*)
 let letter = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let ident = (letter | '_') (letter | digit | '_')*
@@ -74,6 +78,9 @@ rule next_tokens = parse
   | _               { raise (Lexical_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
   | eof             { [EOF] }
   | _ as c  { raise (Lexing_error ("illegal character: " ^ String.make 1 c)) }
+
+(*--------------------------------------------------*)
+
 
 
 and string = parse
