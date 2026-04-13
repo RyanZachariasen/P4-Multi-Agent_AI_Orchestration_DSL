@@ -11,7 +11,7 @@ let string_of_typ = function
   | TNamed s -> s
 
 
-(* Error handling*)
+(* Error handling - mangler måske noget der sikrer uniqueness?*)
 exception Type_error of loc option * string
 let error ?loc msg = raise (Type_error (loc, msg))
 
@@ -30,3 +30,9 @@ let bad_arity ?loc f expected got =
 let type_mismatch ?loc t1 t2 =
   error ?loc ("Type mismatch: expected " ^ string_of_typ t2 ^
               ", got " ^ string_of_typ t1)
+
+(* Environment setup - Måske ændre til at bruge Maps i stedet for Hash tables*)
+let function_env = Hashtbl.create 8
+let resource_env = Hashtbl.create 8
+let type_env     = Hashtbl.create 8
+let variable_env = Hashtbl.create 8
