@@ -49,12 +49,13 @@ let ident = (letter | '_') (letter | digit | '_')*
 let integer = '0' | ['1'-'9'] digit*
 let space = ' ' | '\t'
 
+
+
 rule next_tokens = parse
   | '\n'    { new_line lexbuf; update_stack (indentation lexbuf) }
   | (space | comment)+
                     { next_tokens lexbuf }
-  | ident as id     { id_or_kwd id }
-  | "/*"            { comment lexbuf; next_token lexbuf }
+  | "/*"            { comment lexbuf; next_tokens lexbuf }
   | "\"\"\""        { [CST (Cstring (triple_string lexbuf))] }
   |','              { [COMMA] }
   |'.'              { [DOT] }
@@ -63,45 +64,50 @@ rule next_tokens = parse
   | ')'             { [RP] }
   | '{'             { [LBRACE] }
   | '}'             { [RBRACE] }
-  | _               { raise (Lexical_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
   | ':'             { [COLON] }
   | '"'             { [CST (Cstring (string lexbuf))] }
-  | "->"            {ARROW}
+  | "->"            {[ARROW]}
   | integer as s
             { try [CST (Cint (Int64.of_string s))]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
-  | eof             { EOF }
+  | ident as id     { [id_or_kwd id]}
+  | _               { raise (Lexical_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
+  | eof             { [EOF] }
+  | _ as c  { raise (Lexing_error ("illegal character: " ^ String.make 1 c)) }
 
 
 and string = parse
-  | '"'
-      { let s = Buffer.contents string_buffer in
-	Buffer.reset string_buffer;
-	s }
-  | "\"\"\""  { [CST (Cstring (triple_string lexbuf))] } 
+  | '"' { let s = Buffer.contents string_buffer in Buffer.reset string_buffer; s }
   | "\\n" { Buffer.add_char string_buffer '\n'; string lexbuf }
   | "\\\"" { Buffer.add_char string_buffer '"'; string lexbuf }
   | _ as c { Buffer.add_char string_buffer c; string lexbuf }
   | eof { raise (Lexing_error "unterminated string") }
 
+
   and comment = parse
   | "*/" { () }
   | '\n' { newline lexbuf; comment lexbuf }
-  | '"' 
   | _    { comment lexbuf }
   | eof  { raise (Lexical_error "unterminated comment") }
 
-let next_token =
-  let tokens = Queue.create () in
-  fun lb ->
-    if Queue.is_empty tokens then begin
-      let l = next_tokens lb in
-      List.iter (fun t -> Queue.add t tokens) l
-    end;
-    Queue.pop tokens
+
+and triple_string = parse
+  | "\"\"\""        { let s = Buffer.contents string_buffer in Buffer.reset string_buffer; s }
+  | _ as c          { Buffer.add_char string_buffer c; triple_string lexbuf }
+  | eof             { raise (Lexing_error "unterminated triple string") }
 
 and indentation = parse
-  | (space | comment)* '\n'
-      { new_line lexbuf; indentation lexbuf }
-  | space* as s
-      { String.length s }
+  | (space | comment)* '\n'{ new_line lexbuf; indentation lexbuf }
+  | space* as s { String.length s }
+
+
+{
+  let next_token =
+    let tokens = Queue.create () in (* next tokens to emit *)
+    fun lb ->
+      if Queue.is_empty tokens then begin
+	let l = next_tokens lb in
+	List.iter (fun t -> Queue.add t tokens) l
+      end;
+      Queue.pop tokens
+}
