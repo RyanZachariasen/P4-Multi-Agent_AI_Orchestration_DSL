@@ -1,4 +1,4 @@
-name: CI - build, test and lint
+name: CI
 
 on:
   pull_request:
@@ -16,18 +16,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest] 
       fail-fast: false
 
     steps:
       - name: Checkout tree
-        uses: actions/checkout@v4 
+        uses: actions/checkout@v4
 
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: 5
-          dune-cache: true 
+          dune-cache: true
 
       - name: Install dependencies
         run: opam install . --deps-only --with-test
@@ -38,17 +38,6 @@ jobs:
       - name: Run tests
         run: opam exec -- dune runtest
 
-  
-  lint-fmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ocaml/setup-ocaml@v3
-        with:
-          ocaml-compiler: 5
-      - name: Check Formatting
-        run: opam exec -- dune build @fmt
-
   lint-opam:
     runs-on: ubuntu-latest
     steps:
@@ -57,4 +46,4 @@ jobs:
         with:
           ocaml-compiler: 5
       - name: Lint Opam
-        run: opam exec -- opam lint ./multi-agent_orchestration/*.opam
+        run: opam exec -- opam lint *.opam

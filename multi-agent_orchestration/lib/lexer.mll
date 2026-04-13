@@ -32,8 +32,8 @@ rule token = parse
   | "text".         {TEXT}
   | "Code".         {CODE}
   | "on resource"   {ON RESOURCE}
-  | ':'             {:}
-  | '"'             {""}
+  | ':'             {COLON}
+  | '"'             {QUOATATION}
   | "->".           {ARROW}
   | "string".       {STRING}
   | "int".          {INT}
