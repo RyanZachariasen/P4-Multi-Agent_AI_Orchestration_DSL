@@ -1,7 +1,7 @@
 (** ast_v1.mli — Minimal mAI: resource-parametric functions, sequential workflow *)  
   
 type name = string  
-type loc = { file: string; line: int; col: int }  
+type location = { file: string; line: int; col: int }  
 
 type provider = Anthropic | OpenAI | Gemini | Grok
 
@@ -14,65 +14,68 @@ type typ =
   | TFile             (** file path for builtin tools *)  
   | TRecord of name 
 
-type constant =  
+type expr = 
+  | EVar of name
+  | EConst of constant
+  | ECall  of name * expr list * name option  
+      (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
+          read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
+  | EField  of expr * name  (** verdict.score *)
+  | EBinOp  of binop * expr * expr  
+  
+and constant =  
   | CText of string                (** raw text *)  
   | CInt of int                  (** compiler generates int() *)  
   | CFloat of float                (** compiler generates float() *)  
   | CBool of bool                (** compiler generates bool parse *)  
   | CCode of string                 (** text + fence stripping; Code <= Text *)  
   | CFile of string                   (** file path for builtin tools *)  
-  | CRecord of name              (** user-declared record → Pydantic *)  
-  
-type binop = Add | Sub | Mul | Div | Concat  
-  
-type expr = 
-  | EConst of constant
-  | ECall  of name * expr list * name option  
-      (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
-          read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
-  | EField  of expr * name     (** verdict.score *)
-  | EBinOp  of binop * expr * expr  
-  
+  | CRecord of name * (name * expr) list          (** user-declared record → Pydantic *)  
+
+and binop = Add | Sub | Mul | Div | Concat  
+
+
 type stmt =  
   | SLet   of name * expr      (** x = f(y) on R *)  
   | SPrint of expr  
-  | SWrite of expr * expr      (** write_file(path, content) *)  
+  | SWriteFile of expr * expr
+  | SReadFile of expr      (** write_file(path, content) *)  
   
-type resource_decl = {  
+type resourceDeclaration = {  
   rs_name: name; rs_provider: provider;  
-  rs_model: string; max_tokens: int; system_prompt: string; rs_loc: loc;
+  rs_model: string; max_tokens: int; system_prompt: string; rs_loc: location;
 }  (* add more stuff like max-tokens, system prompt*)
   
-type func_decl = {
-  func_name: name;  
-  func_params: (name * typ) list;   (** typed parameters *)  
-  func_return: typ;                  (** return type = codegen directive *)  
-  func_needs_resource: bool;         (** true → call site must provide "on R" *)  
-  func_prompt: string option * (name * typ) list;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
-  func_builtin: bool;                (** true for read_pdf etc *)  
-  func_loc: loc;  
+type funcDeclaration = {
+  funcName: name;  
+  funcParams: (name * typ) list;   (** typed parameters *)  
+  funcReturn: typ;                  (** return type = codegen directive *)  
+  funcNeedsResource: bool;         (** true → call site must provide "on R" *)  
+  funcPrompt: string option * (name * typ) list;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
+  funcBuiltin: bool;                (** true for read_pdf etc *)  
+  funcLocation: location;  
 }  
   
-type type_decl = {  
-  td_name: name;  
-  td_fields: (name * typ) list;  
-  td_loc: loc;  
+type typeDeclaration = {  
+  tdName: name;  
+  tdFields: (name * typ) list;  
+  tdLocation: location;  
 }  
   
-type decl =  
-  | DResource of resource_decl  
-  | DFunc of func_decl  
-  | DType of type_decl  
+type declaration =  
+  | DResource of resourceDeclaration  
+  | DFunc of funcDeclaration  
+  | DType of typeDeclaration  
   
 type workflow = {  
   wf_name: name;  
   wf_params: (name * typ) list;  
   wf_body: stmt list;  
-  wf_loc: loc;  
+  wf_loc: location;  
 }  
   
 type program = {  
-  prog_decls: decl list;  
+  prog_decls: declaration list;  
   prog_workflow: workflow;  
 }
 
