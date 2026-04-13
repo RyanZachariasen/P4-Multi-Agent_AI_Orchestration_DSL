@@ -28,22 +28,22 @@ rule token = parse
   | _               { raise (Error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
   | "type"          {TYPE}
   | "func"          {FUNC}
-  | "resource".     {RESOURCE}
-  | "text".         {TEXT}
-  | "Code".         {CODE}
+  | "resource"     {RESOURCE}
+  | "text"        {TEXT}
+  | "Code"        {CODE}
   | "on resource"   {ON RESOURCE}
   | ':'             {COLON}
   | '"'             {QUOATATION}
-  | "->".           {ARROW}
-  | "string".       {STRING}
-  | "int".          {INT}
-  | "workflow".     {WORKFLOW}
-  | "print".        {PRINT}
-  | "Bool".         {BOOL}
-  | "anthropic".    {ANTHROPIC}
-  | "openai".       {OPENAI}
-  | "gemini".       {GEMINI}
-  | "double".       {DOUBLE}
+  | "->"           {ARROW}
+  | "string"       {STRING}
+  | "int"          {INT}
+  | "workflow"     {WORKFLOW}
+  | "print"        {PRINT}
+  | "Bool"         {BOOL}
+  | "anthropic"    {ANTHROPIC}
+  | "openai"       {OPENAI}
+  | "gemini"       {GEMINI}
+  | "double"       {DOUBLE}
   
   and comment = parse
   | "*/" { () }
