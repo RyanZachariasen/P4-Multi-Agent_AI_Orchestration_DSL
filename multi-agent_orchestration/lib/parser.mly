@@ -18,9 +18,10 @@
 %token <float> FLOAT
 %token <bool> BOOL
 
-%token COMMA ASSIGN LBRACE RBRACE RECORD DOT PRINT LPAREN RPAREN WRITE READ
+%token COMMA ASSIGN LBRACE RBRACE TYPE DOT PRINT LPAREN RPAREN WRITE READ
 %token PLUS MINUS TIMES DIV CONCAT
 %token RESOURCE ANTHROPIC OPENAI GEMINI GROK
+%token FUNC 
 %token EOF
 
 /* Precedence rules to handle ambiguity (Week 4-5 content) */
@@ -34,6 +35,7 @@ file:
 
 expr:
 | ident = IDENT { EVar ident }
+
 | const = constant { EConst const }
 | expr1 = expr; opperand = opperand; expr2 = expr { EBinOp (opperand, expr1, expr2)}
 | expr = expr; DOT; ident = IDENT { EField (expr, ident) }
@@ -49,30 +51,33 @@ constant:
 | const = BOOL { CBool const }
 | const = CODE { CCode const }
 | const = FILE { CFile const }
-| RECORD; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, recordField) ; RBRACE; { CRecord (ident, exprList) }
-;
-
-recordField:
-| ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
 ;
 
 stmt:
 | ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
-| PRINT; LPAREN; expr=expr RPAREN; { SPrint expr }
-| WRITE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { SWriteFile(file, expr )}
+| PRINT; LPAREN; expr = expr RPAREN; { SPrint expr }
+| WRITE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { SWriteFile (file, expr)}
 | READ ; LPAREN ; file = FILE ; RPAREN { SReadFile file }
 
 declaration:
-| RESOURCE ; ident = IDENT ; ASSIGN ; provider = provider ; LPAREN ; model = TEXT optionals = resourceOptionals ; RPAREN  { 
+| RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resourceOptionals; RPAREN  { 
     let (maxTokens, systemPrompt) = optionals in
-    { resourceName = ident, 
+    DResource {
+      resourceName = ident, 
       resourceProvider = provider, 
       resourceModel = model, 
       maxTokens = maxTokens, 
       systemPrompt = systemPrompt, 
       resourceLocation = { $startpos.pos_fname; $startpos.pos_lnum, $endpos.pos_cnum }
-    } 
+    }
   }
+
+| TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, customTypeField) ; RBRACE; { CCustomType (ident, exprList) }
+;
+
+customTypeField:
+| ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
+;
 
 resourceOptionals: 
 | { (None, None) }

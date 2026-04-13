@@ -30,7 +30,7 @@ and constant =
   | CBool of bool                (** compiler generates bool parse *)  
   | CCode of string                 (** text + fence stripping; Code <= Text *)  
   | CFile of string                   (** file path for builtin tools *)  
-  | CRecord of name * (name * expr) list          (** user-declared record → Pydantic *)  
+  | CCustomType of name           (** user-declared record → Pydantic *)  
 
 and binop = Add | Sub | Mul | Div | Concat  
 
@@ -61,7 +61,7 @@ type funcDeclaration = {
   funcLocation: location;  
 }  
 
-type typeDeclaration = {  
+type customTypeDeclaration = {  
   tdName: name;  
   tdFields: (name * typ) list;  
   tdLocation: location;  
@@ -70,10 +70,10 @@ type typeDeclaration = {
 type declaration =  
   | DResource of resourceDeclaration  
   | DFunc of funcDeclaration  
-  | DType of typeDeclaration  
+  | DCustomType of customTypeDeclaration  
 
 type workflow = {  
-  wf_name: name;  
+  workflowName: name;  
   wf_params: (name * typ) list;  
   wf_body: stmt list;  
   wf_loc: location;  
