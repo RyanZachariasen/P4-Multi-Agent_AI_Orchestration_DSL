@@ -64,8 +64,8 @@ rule next_tokens = parse
   |','              { [COMMA] }
   |'.'              { [DOT] }
   |'='              { [ASSIGN] }
-  | '('             { [LP] }
-  | ')'             { [RP] }
+  | '('             { [LPAREN] }
+  | ')'             { [RPAREN] }
   | '{'             { [LBRACE] }
   | '}'             { [RBRACE] }
   | ':'             { [COLON] }
