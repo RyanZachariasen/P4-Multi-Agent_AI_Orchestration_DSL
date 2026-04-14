@@ -6,7 +6,7 @@
 
 
 (*--------------------Keywords--------------------*)
-  let id_or_kwd =
+  let id_or_keyword =
     let h = Hashtbl.create 32 in
     List.iter (fun (s, tok) -> Hashtbl.add h s tok)
       [
@@ -74,7 +74,7 @@ rule next_tokens = parse
   | integer as s
             { try [CST (Cint (Int64.of_string s))]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
-  | ident as id     { [id_or_kwd id]}
+  | ident as id     { [id_or_keyword id]}
   | _               { raise (Lexical_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
   | eof             { [EOF] }
   | _ as c  { raise (Lexing_error ("illegal character: " ^ String.make 1 c)) }
@@ -91,7 +91,7 @@ and string = parse
   | eof { raise (Lexing_error "unterminated string") }
 
 
-  and comment = parse
+and comment = parse
   | "*/" { () }
   | '\n' { newline lexbuf; comment lexbuf }
   | _    { comment lexbuf }
