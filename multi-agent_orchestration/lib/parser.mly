@@ -6,7 +6,7 @@
 %token <string> IDENT
 %token IF ELSE SPAWN ASSIGN
 %token PLUS MINUS TIMES DIV
-%token LBRACE RBRACE
+%token LPAREN RPARAEN LBRACE RBRACE
 %token EOF
 
 /* Precedence rules to handle ambiguity (Week 4-5 content) */
