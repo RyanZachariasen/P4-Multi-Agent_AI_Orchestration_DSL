@@ -10,19 +10,16 @@
     let h = Hashtbl.create 32 in
     List.iter (fun (s, tok) -> Hashtbl.add h s tok)
       [
-        "def", DEF; "if", IF; "else", ELSE;
+        "workflow", WORKFLOW; "Resource", RESOURCE; "func", FUNC; "type", TYPE;
+
+        "anthropic", ANTHROPIC; "openai", OPENAI; "gemini", GEMINI; "grok", GROK; 
+
+        "string", STRING; "int", INT; "float", FLOAT; "bool", BOOL; "builtin", BUILTIN;
+        "write_file", WRITE_FILE; "read_file", READ_TEXT; "read_pdf", READ_PDF;
         
-        "workflow", WORKFLOW; "resource", RESOURCE; "func", FUNC;
-        "type", TYPE; "on", ON;
-
-        "anthropic", ANTHROPIC; "openai", OPENAI; "gemini", GEMINI;
-
-        "string", STRING; "int", INT; "double", DOUBLE; "bool", BOOL;
         "Text", TEXT; "File", FILE; "Code", CODE;
 
         "True", CST (Cbool true); "False", CST (Cbool false);
-        "builtin", BUILTIN;
-        
         ];
    fun s -> try Hashtbl.find h s with Not_found -> IDENT s
 (*----------------------------------------------*)
