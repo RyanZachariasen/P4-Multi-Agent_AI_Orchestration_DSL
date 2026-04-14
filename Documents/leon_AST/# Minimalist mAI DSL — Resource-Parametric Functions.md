@@ -41,6 +41,7 @@ func improve(code: Code, feedback: Text) -> Code
 func read_pdf(path: File) -> Text   builtin  
 func read_text(path: File) -> Text  builtin  
 func write_file(path: Text, content: Text) builtin  
+
 ```  
   
 ### Workflow — call site binds the resource  
