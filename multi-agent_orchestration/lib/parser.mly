@@ -18,7 +18,7 @@
 %token <float> FLOAT
 %token <bool> BOOL
 
-%token COMMA ASSIGN LBRACE RBRACE TYPE DOT PRINT LPAREN RPAREN WRITE READ
+%token COMMA ASSIGN LBRACE RBRACE TYPE DOT PRINT LPAREN RPAREN WRITE_FILE READ_FILE
 %token PLUS MINUS TIMES DIV CONCAT
 %token RESOURCE ANTHROPIC OPENAI GEMINI GROK
 %token FUNC 
@@ -37,7 +37,7 @@ expr:
 | ident = IDENT { EVar ident }
 
 | const = constant { EConst const }
-| expr1 = expr; opperand = opperand; expr2 = expr { EBinOp (opperand, expr1, expr2)}
+| expr_1 = expr; opperand = opperand; expr_2 = expr { EBinOp (opperand, expr_1, expr_2)}
 | expr = expr; DOT; ident = IDENT { EField (expr, ident) }
 ;
 
@@ -56,50 +56,42 @@ constant:
 stmt:
 | ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
 | PRINT; LPAREN; expr = expr RPAREN; { SPrint expr }
-| WRITE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { SWriteFile (file, expr)}
-| READ ; LPAREN ; file = FILE ; RPAREN { SReadFile file }
+| WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { SWriteFile (file, expr)}
+| READ_FILE ; LPAREN ; file = FILE ; RPAREN { SReadFile file }
 
 declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resourceOptionals; RPAREN  { 
-    let (maxTokens, systemPrompt) = optionals in
+    let (max_tokens, system_prompt) = optionals in
     DResource {
       resourceName = ident, 
       resourceProvider = provider, 
       resourceModel = model, 
-      maxTokens = maxTokens, 
-      systemPrompt = systemPrompt, 
+      max_tokens = max_tokens, 
+      system_prompt = system_prompt, 
       resourceLocation = { $startpos.pos_fname; $startpos.pos_lnum, $endpos.pos_cnum }
     }
   }
 
-| TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, customTypeField) ; RBRACE; { CCustomType (ident, exprList) }
+| TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, custom_type_field) ; RBRACE; { CCustomType (ident, exprList) }
 ;
 
-customTypeField:
+custom_type_field:
 | ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
 ;
 
-resourceOptionals: 
+resource_optionals: 
 | { (None, None) }
 
-| COMMA ; ident = IDENT ; ASSIGN ; systemPrompt = TEXT; rest = resourceOptionals {
-  let (maxTokens, _) = rest in
-  (maxTokens, systemPrompt) }
+| COMMA ; ident = IDENT ; ASSIGN ; system_prompt = TEXT; rest = resource_optionals {
+  let (max_tokens, _) = rest in
+  (max_tokens, system_prompt) }
 
-| COMMA ; ident = IDENT ; ASSIGN ; maxTokens = INT; rest = resourceOptionals {
-  let (_, systemPrompt) = rest in
-  (maxTokens, systemPrompt) }
+| COMMA ; ident = IDENT ; ASSIGN ; max_tokens = INT; rest = resource_optionals {
+  let (_, system_prompt) = rest in
+  (max_tokens, system_prompt) }
 
 provider:
 | GROK { Grok }
 | OPENAI { OpenAI }
 | ANTHROPIC { Anthropic }
 | GEMINI { Gemini }
-
-
-
-
-(* 
-Resource agent1 = OpenAI("model", 10000) 
-
-*)
