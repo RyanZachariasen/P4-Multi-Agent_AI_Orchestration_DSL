@@ -1,0 +1,2 @@
+workflow:
+    x = concat("hello", "world")

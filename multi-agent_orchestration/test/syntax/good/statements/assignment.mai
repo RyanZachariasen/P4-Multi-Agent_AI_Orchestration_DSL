@@ -1,0 +1,7 @@
+workflow:
+    x = "hello"
+    x = 10
+    x = 1.2
+    x = false
+    x = true
+    
