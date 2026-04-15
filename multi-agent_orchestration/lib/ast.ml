@@ -1,17 +1,86 @@
-(* Basic types for our multi-agent language *)
-type ident = string
+(** ast_v1.mli — Minimal mAI: resource-parametric functions, sequential workflow *)  
+  
+type name = string  
+type location = { file: string; line: int; col: int }  
 
-type expr =
-  | Econst of int
-  | Evar of ident
-  | Ebinop of binop * expr * expr
+type provider = Anthropic | OpenAI | Gemini | Grok
 
-and binop = Add | Sub | Mul | Div
+type typ =  
+  | TText              (** raw text *)  
+  | TInt                   (** compiler generates int() *)  
+  | TFloat             (** compiler generates float() *)  
+  | TBool                 (** compiler generates bool parse *)  
+  | TCode                  (** text + fence stripping; Code <= Text *)  
+  | TFile             (** file path for builtin tools *)  
+  | TRecord of name 
 
-type stmt =
-  | Sassign of ident * expr
-  | Sif of expr * stmt * stmt
-  | Sblock of stmt list
-  | Sspawn of ident (* Specific to your multi-agent theme *)
+type expr = 
+  | EVar of name
+  | EConst of constant
+  | ECall  of name * expr list * name option  
+      (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
+          read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
+  | EField  of expr * name  (** verdict.score *)
+  | EBinOp  of binop * expr * expr  
 
-type file = stmt list
+and constant =  
+  | CText of string                (** raw text *)  
+  | CInt of int                  (** compiler generates int() *)  
+  | CFloat of float                (** compiler generates float() *)  
+  | CBool of bool                (** compiler generates bool parse *)  
+  | CCode of string                 (** text + fence stripping; Code <= Text *)  
+  | CFile of string                   (** file path for builtin tools *)  
+  | CCustomType of name           (** user-declared record → Pydantic *)  
+
+and binop = Add | Sub | Mul | Div | Concat  
+
+type statement =  
+  | SLet   of name * expr      (** x = f(y) on R *)  
+  | SPrint of expr  
+  | SWriteFile of expr * expr
+  | SReadFile of expr      (** write_file(path, content) *)  
+  
+type resource_declaration = {  
+  resource_name: name;
+  resource_provider: provider;  
+  resource_model: string;
+  max_tokens: int option;
+  system_prompt: string option; 
+  resource_location: location;
+}  (* add more stuff like max-tokens, system prompt*)
+
+
+type func_declaration = {
+  func_name: name;  
+  func_params: (name * typ) list;   (** typed parameters *)  
+  func_return: typ;                  (** return type = codegen directive *)  
+  func_needsResource: bool;         (** true → call site must provide "on R" *)  
+  func_prompt: string option * (name * typ) list;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
+  func_builtin: bool;                (** true for read_pdf etc *)  
+  func_location: location;  
+}  
+
+type custom_type_declaration = {  
+  type_name: name;  
+  type_fields: (name * typ) list;  
+  type_location: location;  
+}
+
+type declaration =  
+  | DResource of resource_declaration  
+  | DFunc of func_declaration  
+  | DCustomType of custom_type_declaration  
+
+type workflow = {  
+  workflow_name: name;  
+  workflow_params: (name * typ) list;  
+  workflow_body: statement list;  
+  workflow_loc: location;  
+}  
+  
+type program = {  
+  prog_decls: declaration list;  
+  prog_workflow: workflow;  
+}
+
+type file = expr list

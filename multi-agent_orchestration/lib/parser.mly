@@ -1,35 +1,99 @@
 %{
+  open Parsing
   open Ast
+  (* CREATE HASHTABLE FOR FUNCTIONS *)
+    (* Check if exists *)
+    (* Check for arity *)
+    (* assign type *)
+
 %}
 
-%token <int> INT
+%token <Ast.constant> CONST
 %token <string> IDENT
-%token IF ELSE SPAWN ASSIGN
-%token PLUS MINUS TIMES DIV
-%token LPAREN RPARAEN LBRACE RBRACE
+
+
+%token <int> INT
+%token <string> FILE
+%token <string> TEXT
+%token <string> CODE
+%token <float> FLOAT
+%token <bool> BOOL
+
+%token COMMA ASSIGN LBRACE RBRACE TYPE DOT PRINT LPAREN RPAREN WRITE_FILE READ_FILE
+%token PLUS MINUS TIMES DIV CONCAT
+%token RESOURCE ANTHROPIC OPENAI GEMINI GROK
+%token FUNC 
+
 %token EOF
 
 /* Precedence rules to handle ambiguity (Week 4-5 content) */
 %left PLUS MINUS
 %left TIMES DIV
-
 %start <Ast.file> file
-
 %%
 
 file:
-| s = list(stmt); EOF { s }
-
-stmt:
-| id = IDENT; ASSIGN; e = expr { Sassign(id, e) }
-| SPAWN; id = IDENT { Sspawn(id) }
-| IF; e = expr; s1 = stmt; ELSE; s2 = stmt { Sif(e, s1, s2) }
-| LBRACE; s = list(stmt); RBRACE { Sblock(s) }
+| expr_list = list(expr); EOF { expr_list };
 
 expr:
-| n = INT { Econst(n) }
-| id = IDENT { Evar(id) }
-| e1 = expr; op = binop; e2 = expr { Ebinop(op, e1, e2) }
+| ident = IDENT { EVar ident }
 
-%inline binop:
-| PLUS { Add } | MINUS { Sub } | TIMES { Mul } | DIV { Div }
+| const = constant { EConst const }
+| expr_1 = expr; opperand = opperand; expr_2 = expr { EBinOp (opperand, expr_1, expr_2)}
+| expr = expr; DOT; ident = IDENT { EField (expr, ident) }
+;
+
+opperand:
+| PLUS {Add} | MINUS {Sub} |  TIMES {Mul} | DIV {Div} | CONCAT {Concat}
+
+constant:
+| const = INT { CInt const }
+| const = TEXT { CText const }
+| const = FLOAT { CFloat const }
+| const = BOOL { CBool const }
+| const = CODE { CCode const }
+| const = FILE { CFile const }
+;
+
+stmt:
+| ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
+| PRINT; LPAREN; expr = expr RPAREN; { SPrint expr }
+| WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { SWriteFile (file, expr)}
+| READ_FILE ; LPAREN ; file = FILE ; RPAREN { SReadFile file }
+
+declaration:
+| RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN  { 
+    let (max_tokens, system_prompt) = optionals in
+    DResource {
+      resourceName = ident, 
+      resourceProvider = provider, 
+      resourceModel = model, 
+      max_tokens = max_tokens, 
+      system_prompt = system_prompt, 
+      resourceLocation = { $startpos.pos_fname; $startpos.pos_lnum, $endpos.pos_cnum }
+    }
+  }
+
+| TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, custom_type_field) ; RBRACE; { CCustomType (ident, exprList) }
+;
+
+custom_type_field:
+| ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
+;
+
+resource_optionals: 
+| { (None, None) }
+
+| COMMA ; ident = IDENT ; ASSIGN ; system_prompt = TEXT; rest = resource_optionals {
+  let (max_tokens, _) = rest in
+  (max_tokens, system_prompt) }
+
+| COMMA ; ident = IDENT ; ASSIGN ; max_tokens = INT; rest = resource_optionals {
+  let (_, system_prompt) = rest in
+  (max_tokens, system_prompt) }
+
+provider:
+| GROK { Grok }
+| OPENAI { OpenAI }
+| ANTHROPIC { Anthropic }
+| GEMINI { Gemini }
