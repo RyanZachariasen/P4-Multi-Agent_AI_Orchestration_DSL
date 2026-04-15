@@ -33,6 +33,7 @@ let type_mismatch ?loc t1 t2 =
 
 (* Environment setup - Måske ændre til at bruge Maps i stedet for Hash tables*)
 let function_env = Hashtbl.create 8
+Hashtbl.add 
 let resource_env = Hashtbl.create 8
 let type_env     = Hashtbl.create 8
 let variable_env = Hashtbl.create 8

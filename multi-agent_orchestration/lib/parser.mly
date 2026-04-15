@@ -1,16 +1,20 @@
 %{
   open Parsing
   open Ast
+
+  let function_env = Hashtbl.create 8
   (* CREATE HASHTABLE FOR FUNCTIONS *)
     (* Check if exists *)
     (* Check for arity *)
     (* assign type *)
 
+
+
 %}
 
-%token <Ast.constant> CONST
 %token <string> IDENT
 
+%token TINT TCODE TFLOAT TBOOL TTEXT TFILE 
 
 %token <int> INT
 %token <string> FILE
@@ -21,8 +25,10 @@
 
 %token COMMA ASSIGN LBRACE RBRACE TYPE DOT PRINT LPAREN RPAREN WRITE_FILE READ_FILE
 %token PLUS MINUS TIMES DIV CONCAT
+
 %token RESOURCE ANTHROPIC OPENAI GEMINI GROK
-%token FUNC 
+
+%token FUNC ARROW WORKFLOW TYPE
 
 %token EOF
 
@@ -42,6 +48,9 @@ expr:
 | expr_1 = expr; opperand = opperand; expr_2 = expr { EBinOp (opperand, expr_1, expr_2)}
 | expr = expr; DOT; ident = IDENT { EField (expr, ident) }
 ;
+
+type: 
+| TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile}
 
 opperand:
 | PLUS {Add} | MINUS {Sub} |  TIMES {Mul} | DIV {Div} | CONCAT {Concat}
@@ -73,9 +82,22 @@ declaration:
       resourceLocation = { $startpos.pos_fname; $startpos.pos_lnum, $endpos.pos_cnum }
     }
   }
-
 | TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, custom_type_field) ; RBRACE; { CCustomType (ident, exprList) }
+
+| FUNC; ident = IDENT; LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN; ARROW; return_type = TYPE; COLON; 
+    { Hashtbl.add function_env ident (func_params, return_type) 
+      DFunc {
+        name=ident;
+        func_params=func_params;
+        func_return=return_type;
+        
+      }
+    }
+
 ;
+
+func_parameter:
+| ident = IDENT ; COLON ; typ = type; {(ident, typ)}
 
 custom_type_field:
 | ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
