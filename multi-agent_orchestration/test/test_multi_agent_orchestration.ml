@@ -1,0 +1,1 @@
+let () = print_string("no tests exists")
