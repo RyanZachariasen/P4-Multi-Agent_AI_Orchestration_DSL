@@ -60,7 +60,7 @@ stmt:
 | READ_FILE ; LPAREN ; file = FILE ; RPAREN { SReadFile file }
 
 declaration:
-| RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resourceOptionals; RPAREN  { 
+| RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN  { 
     let (max_tokens, system_prompt) = optionals in
     DResource {
       resourceName = ident, 
