@@ -14,12 +14,12 @@
 
         "anthropic", ANTHROPIC; "openai", OPENAI; "gemini", GEMINI; "grok", GROK; 
     
-        "string", STRING; "int", INT; "float", FLOAT; "bool", BOOL; "builtin", BUILTIN;
+        "int", TINT; "float", TFLOAT; "bool", TBOOL; "builtin", BUILTIN;
         "write_file", WRITE_FILE; "read_file", READ_TEXT; "read_pdf", READ_PDF;
         
-        "Text", TEXT; "File", FILE; "Code", CODE;
+        "Text", TTEXT; "File", TFILE; "Code", TCODE;
 
-        "True", CST (Cbool true); "False", CST (Cbool false);
+        "True", BOOL(true); "False", BOOL(false);
         ];
    fun s -> try Hashtbl.find h s with Not_found -> IDENT s
 (*----------------------------------------------*)
@@ -57,7 +57,7 @@ rule next_tokens = parse
   | (space | comment)+
                     { next_tokens lexbuf }
   | "/*"            { comment lexbuf; next_tokens lexbuf }
-  | "\"\"\""        { [CST (Cstring (triple_string lexbuf))] }
+  | "\"\"\""        { [TEXT (triple_string lexbuf))] }
   |','              { [COMMA] }
   |'.'              { [DOT] }
   |'='              { [ASSIGN] }
@@ -66,10 +66,10 @@ rule next_tokens = parse
   | '{'             { [LBRACE] }
   | '}'             { [RBRACE] }
   | ':'             { [COLON] }
-  | '"'             { [CST (Cstring (string lexbuf))] }
-  | "->"            {[ARROW]}
+  | '"'             { [TEXT (string lexbuf))] }
+  | "->"            { [ARROW] }
   | integer as s
-            { try [CST (Cint (Int64.of_string s))]
+            { try [INT (Int64.of_string s))]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
   | ident as id     { [id_or_keyword id]}
   | _               { raise (Lexical_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
