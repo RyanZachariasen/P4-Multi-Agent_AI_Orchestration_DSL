@@ -3,6 +3,9 @@
   open Ast
 
   let function_env = Hashtbl.create 8
+  let custom_type_env = Hashtbl.create 8
+  let variable_env = Hashtbl.create 8
+
   (* CREATE HASHTABLE FOR FUNCTIONS *)
     (* Check if exists *)
     (* Check for arity *)
@@ -23,7 +26,10 @@
 %token <float> FLOAT
 %token <bool> BOOL
 
-%token COMMA ASSIGN LBRACE RBRACE TYPE DOT PRINT LPAREN RPAREN WRITE_FILE READ_FILE
+%token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN
+
+%token WRITE_FILE READ_FILE PRINT
+
 %token PLUS MINUS TIMES DIV CONCAT
 
 %token RESOURCE ANTHROPIC OPENAI GEMINI GROK
