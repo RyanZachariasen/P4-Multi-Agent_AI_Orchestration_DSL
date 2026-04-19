@@ -2,11 +2,6 @@
   open Parsing
   open Ast
   open Typing
-
-  (* CREATE HASHTABLE FOR FUNCTIONS *)
-    (* Check if exists *)
-    (* Check for arity *)
-    (* assign type *)
 %}
 
 %token <string> IDENT
@@ -20,7 +15,7 @@
 %token <float> FLOAT
 %token <bool> BOOL
 
-%token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN
+%token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN COLON ON_RESOURCE BEGIN END
 
 %token WRITE_FILE READ_FILE PRINT
 
@@ -43,13 +38,12 @@ file:
 
 expr:
 | ident = IDENT { EVar ident }
-
 | const = constant { EConst const }
 | expr_1 = expr; opperand = opperand; expr_2 = expr { EBinOp (opperand, expr_1, expr_2)}
 | expr = expr; DOT; ident = IDENT { EField (expr, ident) }
 ;
 
-type: 
+typ: 
 | TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile}
 
 opperand:
@@ -79,27 +73,41 @@ declaration:
       resourceModel = model, 
       max_tokens = max_tokens, 
       system_prompt = system_prompt, 
-      resourceLocation = { $startpos.pos_fname; $startpos.pos_lnum, $endpos.pos_cnum }
+      resourceLocation = { file = $startpos.pos_fname; line = $startpos.pos_lnum, col = $endpos.pos_cnum }
     }
   }
 | TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, custom_type_field) ; RBRACE; { CCustomType (ident, exprList) }
 
 | FUNC; ident = IDENT; LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN; ARROW; return_type = TYPE; COLON; 
-    {  
-      let func_declaration : AST.func_declaration  = {
-        name=ident;
+    { Hashtbl.add Typing.function_env ident (func_params, return_type) 
+      DFunc {
+        func_name=ident;
         func_params=func_params;
         func_return=return_type;
+        
       }
-
-      Typing.add_new_func func_declaration
-      
-      DFunc func_declaration
     }
+
 ;
 
+| FUNC; ident = IDENT;
+  LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN;
+  ARROW; return_type = typ;
+  ON_RESOURCE;
+  prompt = TEXT;
+    { Hashtbl.add Typing.function_env ident (func_params, return_type);
+      DFunc {
+        func_name = ident;
+        func_params = func_params;
+        func_return = return_type;
+        func_needsResource = true;
+        func_prompt = (Some prompt, []);
+        func_builtin = false;
+        func_location = dummy_loc;
+      } }
+
 func_parameter:
-| ident = IDENT ; COLON ; typ = type; {(ident, typ)}
+| ident = IDENT ; COLON ; typ = typ; {(ident, typ)}
 
 custom_type_field:
 | ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
@@ -110,11 +118,11 @@ resource_optionals:
 
 | COMMA ; ident = IDENT ; ASSIGN ; system_prompt = TEXT; rest = resource_optionals {
   let (max_tokens, _) = rest in
-  (max_tokens, system_prompt) }
+  (max_tokens, Some system_prompt) }
 
 | COMMA ; ident = IDENT ; ASSIGN ; max_tokens = INT; rest = resource_optionals {
   let (_, system_prompt) = rest in
-  (max_tokens, system_prompt) }
+  (Some max_tokens, system_prompt) }
 
 provider:
 | GROK { Grok }
