@@ -1,0 +1,5 @@
+func code(input: Code) -> Code:
+    on resource
+    """ Code this program: {input}"""
+
+workflow:
