@@ -12,7 +12,7 @@ type typ =
   | TBool                 (** compiler generates bool parse *)  
   | TCode                  (** text + fence stripping; Code <= Text *)  
   | TFile             (** file path for builtin tools *)  
-  | TRecord of name 
+  | TCustomType of name 
 
 type expr = 
   | EVar of name
