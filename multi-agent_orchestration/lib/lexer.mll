@@ -65,6 +65,10 @@ rule next_tokens = parse
   | '}'             { [RBRACE] }
   | ':'             { [COLON] }
   | '"'             { [TEXT (string lexbuf)] }
+  | '+'             { [PLUS] }
+  | '-'             { [MINUS] }
+  | '*'             { [TIMES] }
+  | '/'             { [DIV] }
   | "->"            { [ARROW] }
   | integer as s
             { try [INT (int_of_string s)]
