@@ -1,18 +1,12 @@
 %{
   open Parsing
   open Ast
-
-  let function_env = Hashtbl.create 8
-  let custom_type_env = Hashtbl.create 8
-  let variable_env = Hashtbl.create 8
+  open Typing
 
   (* CREATE HASHTABLE FOR FUNCTIONS *)
     (* Check if exists *)
     (* Check for arity *)
     (* assign type *)
-
-
-
 %}
 
 %token <string> IDENT
@@ -91,15 +85,17 @@ declaration:
 | TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, custom_type_field) ; RBRACE; { CCustomType (ident, exprList) }
 
 | FUNC; ident = IDENT; LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN; ARROW; return_type = TYPE; COLON; 
-    { Hashtbl.add function_env ident (func_params, return_type) 
-      DFunc {
+    {  
+      let func_declaration : AST.func_declaration  = {
         name=ident;
         func_params=func_params;
         func_return=return_type;
-        
       }
-    }
 
+      Typing.add_new_func func_declaration
+      
+      DFunc func_declaration
+    }
 ;
 
 func_parameter:
