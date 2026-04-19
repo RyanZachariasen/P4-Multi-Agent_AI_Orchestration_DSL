@@ -93,7 +93,7 @@ declaration:
       }
 
       Typing.add_new_func func_declaration
-
+      
       DFunc func_declaration
     }
 ;
@@ -120,3 +120,4 @@ provider:
 | GROK { Grok }
 | OPENAI { OpenAI }
 | ANTHROPIC { Anthropic }
+| GEMINI { Gemini }
