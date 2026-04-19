@@ -10,7 +10,7 @@ let handle_no_filename_given () : string =
   Sys.argv.(1);;
 
 let parse_file (filename : string) (lexbuf) = 
-      let _ast = Parser.file Lexer.token lexbuf in
+      let _ast = Parser.file Lexer.next_token lexbuf in
       Printf.printf "Successfully parsed: %s\n" filename;;
 
 let handle_lexer_error (error_message : string) (lexbuf: Lexing.lexbuf) = 
@@ -37,7 +37,7 @@ let () =
       parse_file filename lexbuf;
       close_in file_channel
     with
-      | Lexer.Error error_message ->
+      | Lexer.Lexing_error error_message ->
         handle_lexer_error error_message lexbuf
       | Parser.Error ->
         handle_parser_error lexbuf

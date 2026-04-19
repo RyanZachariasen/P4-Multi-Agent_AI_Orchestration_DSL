@@ -20,7 +20,7 @@
 %token <float> FLOAT
 %token <bool> BOOL
 
-%token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN
+%token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN COLON END BEGIN NEWLINE
 
 %token WRITE_FILE READ_FILE PRINT
 
@@ -49,7 +49,7 @@ expr:
 | expr = expr; DOT; ident = IDENT { EField (expr, ident) }
 ;
 
-type: 
+typ: 
 | TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile}
 
 opperand:
@@ -99,7 +99,7 @@ declaration:
 ;
 
 func_parameter:
-| ident = IDENT ; COLON ; typ = type; {(ident, typ)}
+| ident = IDENT ; COLON ; typ = typ; {(ident, typ)}
 
 custom_type_field:
 | ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
