@@ -20,7 +20,7 @@
 %token <float> FLOAT
 %token <bool> BOOL
 
-%token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN COLON END BEGIN NEWLINE
+%token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN
 
 %token WRITE_FILE READ_FILE PRINT
 
@@ -49,7 +49,7 @@ expr:
 | expr = expr; DOT; ident = IDENT { EField (expr, ident) }
 ;
 
-typ: 
+type: 
 | TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile}
 
 opperand:
@@ -93,13 +93,13 @@ declaration:
       }
 
       Typing.add_new_func func_declaration
-      
+
       DFunc func_declaration
     }
 ;
 
 func_parameter:
-| ident = IDENT ; COLON ; typ = typ; {(ident, typ)}
+| ident = IDENT ; COLON ; typ = type; {(ident, typ)}
 
 custom_type_field:
 | ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
@@ -120,4 +120,3 @@ provider:
 | GROK { Grok }
 | OPENAI { OpenAI }
 | ANTHROPIC { Anthropic }
-| GEMINI { Gemini }
