@@ -20,7 +20,7 @@ type expr =
   | ECall  of name * expr list * name option  
       (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
           read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
-  | EField  of expr * name  (** verdict.score *)
+  | EField  of expr * name   (** verdict.score *)
   | EBinOp  of binop * expr * expr  
 
 and constant =  
@@ -59,6 +59,17 @@ type func_declaration = {
   func_builtin: bool;                (** true for read_pdf etc *)  
   func_location: location;  
 }  
+
+
+(*
+x = read_file("hello.txt")
+y = read_code("hello.py")
+z = read_pdf("hello.pdf")
+q = "hello"
+w = 42
+
+
+*)
 
 type custom_type_declaration = {  
   type_name: name;  
