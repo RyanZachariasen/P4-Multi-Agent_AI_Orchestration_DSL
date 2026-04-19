@@ -14,8 +14,8 @@
 
         "anthropic", ANTHROPIC; "openai", OPENAI; "gemini", GEMINI; "grok", GROK; 
     
-        "int", TINT; "float", TFLOAT; "bool", TBOOL; "builtin", BUILTIN;
-        "write_file", WRITE_FILE; "read_file", READ_TEXT; "print" PRINT
+        "int", TINT; "float", TFLOAT; "bool", TBOOL;
+        "write_file", WRITE_FILE; "read_file", READ_FILE; "print", PRINT;
         
         "Text", TTEXT; "File", TFILE; "Code", TCODE;
 
@@ -50,14 +50,12 @@ let ident = (letter | '_') (letter | digit | '_')*
 let integer = '0' | ['1'-'9'] digit*
 let space = ' ' | '\t'
 
-
-
 rule next_tokens = parse
   | '\n'    { new_line lexbuf; update_stack (indentation lexbuf) }
-  | (space | comment)+
+  | space+
                     { next_tokens lexbuf }
   | "/*"            { comment lexbuf; next_tokens lexbuf }
-  | "\"\"\""        { [TEXT (triple_string lexbuf))] }
+  | "\"\"\""        { [TEXT (triple_string lexbuf)] }
   |','              { [COMMA] }
   |'.'              { [DOT] }
   |'='              { [ASSIGN] }
@@ -66,13 +64,17 @@ rule next_tokens = parse
   | '{'             { [LBRACE] }
   | '}'             { [RBRACE] }
   | ':'             { [COLON] }
-  | '"'             { [TEXT (string lexbuf))] }
+  | '"'             { [TEXT (string lexbuf)] }
+  | '+'             { [PLUS] }
+  | '-'             { [MINUS] }
+  | '*'             { [TIMES] }
+  | '/'             { [DIV] }
   | "->"            { [ARROW] }
   | integer as s
-            { try [INT (Int64.of_string s))]
+            { try [INT (int_of_string s)]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
   | ident as id     { [id_or_keyword id]}
-  | _               { raise (Lexical_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
+  | _               { raise (Lexing_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
   | eof             { [EOF] }
   | _ as c  { raise (Lexing_error ("illegal character: " ^ String.make 1 c)) }
 
@@ -90,9 +92,9 @@ and string = parse
 
 and comment = parse
   | "*/" { () }
-  | '\n' { newline lexbuf; comment lexbuf }
+  | '\n' { new_line lexbuf; comment lexbuf }
   | _    { comment lexbuf }
-  | eof  { raise (Lexical_error "unterminated comment") }
+  | eof  { raise (Lexing_error "unterminated comment") }
 
 
 and triple_string = parse
@@ -101,7 +103,7 @@ and triple_string = parse
   | eof             { raise (Lexing_error "unterminated triple string") }
 
 and indentation = parse
-  | (space | comment)* '\n'{ new_line lexbuf; indentation lexbuf }
+  | space* '\n'{ new_line lexbuf; indentation lexbuf }
   | space* as s { String.length s }
 
 

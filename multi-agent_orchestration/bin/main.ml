@@ -2,15 +2,15 @@ open Multi_agent_orchestration
 
 
 let handle_filename_given () : string  = 
-  Printf.printf "Using %s \n" Sys.argv.(0);
-  Sys.argv.(0);;
-
-let handle_no_filename_given () : string = 
-  Printf.eprintf "No file given, using %s\n" Sys.argv.(1);
+  Printf.printf "Using %s \n" Sys.argv.(1);
   Sys.argv.(1);;
 
+let handle_no_filename_given () : string = 
+  Printf.eprintf "No file given, trying main.mai\n";
+  "main.mai"
+
 let parse_file (filename : string) (lexbuf) = 
-      let _ast = Parser.file Lexer.token lexbuf in
+      let _ast = Parser.file Lexer.next_token lexbuf in
       Printf.printf "Successfully parsed: %s\n" filename;;
 
 let handle_lexer_error (error_message : string) (lexbuf: Lexing.lexbuf) = 
@@ -25,7 +25,7 @@ let handle_parser_error (lexbuf: Lexing.lexbuf) =
     exit 1
 
 let () =
-    let filename = (if Array.length Sys.argv < 2 then handle_filename_given() else handle_no_filename_given()) in
+    let filename = (if Array.length Sys.argv > 0 then handle_filename_given() else handle_no_filename_given()) in
     let file_channel = open_in filename in
     let lexbuf = Lexing.from_channel file_channel in
     
@@ -37,7 +37,7 @@ let () =
       parse_file filename lexbuf;
       close_in file_channel
     with
-      | Lexer.Error error_message ->
+      | Lexer.Lexing_error error_message ->
         handle_lexer_error error_message lexbuf
       | Parser.Error ->
         handle_parser_error lexbuf
