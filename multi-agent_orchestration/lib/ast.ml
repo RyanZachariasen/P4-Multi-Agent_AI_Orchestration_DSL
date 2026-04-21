@@ -14,7 +14,11 @@ type typ =
   | TFile             (** file path for builtin tools *)  
   | TCustomType of name 
 
-type expr = 
+type expr =
+  { expr_node: expr_node;
+    expr_loc: loc}
+
+and expr_node = 
   | EVar of name
   | EConst of constant
   | ECall  of name * expr list * name option  
@@ -34,7 +38,11 @@ and constant =
 
 and binop = Add | Sub | Mul | Div | Concat  
 
-type statement =  
+type statement = 
+  {statement_node: statement_node;
+   statement_loc: loc}
+
+and statement_node =  
   | SLet   of name * expr      (** x = f(y) on R *)  
   | SPrint of expr  
   | SWriteFile of expr * expr
