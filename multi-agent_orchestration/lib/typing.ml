@@ -36,7 +36,7 @@ let type_mismatch ?location t1 t2 =
 (* Environment setup - Måske ændre til at bruge Maps i stedet for Hash tables*)
 let function_env: (name, func_declaration) Hashtbl.t = Hashtbl.create 8
 let resource_env: (name, resource_declaration) Hashtbl.t = Hashtbl.create 8
-let type_env: (name, custom_type_declaration) Hashtbl.t = Hashtbl.create 8
+let custom_type_env: (name, custom_type_declaration) Hashtbl.t = Hashtbl.create 8
 let variable_env: (name, constant) Hashtbl.t = Hashtbl.create 8
 
 let add_new_func (ident: Ast.name) (func: Ast.func_declaration) = 
