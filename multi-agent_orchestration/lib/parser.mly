@@ -78,18 +78,6 @@ declaration:
   }
 | TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, custom_type_field) ; RBRACE; { CCustomType (ident, exprList) }
 
-| FUNC; ident = IDENT; LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN; ARROW; return_type = TYPE; COLON; 
-    { Hashtbl.add Typing.function_env ident (func_params, return_type) 
-      DFunc {
-        func_name=ident;
-        func_params=func_params;
-        func_return=return_type;
-        
-      }
-    }
-
-;
-
 | FUNC; ident = IDENT;
   LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN;
   ARROW; return_type = typ;
