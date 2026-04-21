@@ -30,17 +30,41 @@
 /* Precedence rules to handle ambiguity (Week 4-5 content) */
 %left PLUS MINUS
 %left TIMES DIV
-%start <Ast.file> file
+%start <Ast.program> program
 %%
 
+<<<<<<< Updated upstream
 file:
 | expr_list = list(expr); EOF { expr_list };
+=======
+program:
+| decls = separated_list(NEWLINE, declaration); wf = workflow; EOF
+      { { prog_decls    = decls;
+          prog_workflow = wf } }
+
+workflow:
+| WORKFLOW ; COLON ; BEGIN ; body = separated_list(NEWLINE, stmt) ; END { 
+{ workflow_body = body;
+  workflow_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
+}
+
+}
+>>>>>>> Stashed changes
 
 expr:
+| node = expr_node { { expr_node = node; expr_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum } } }
+
+
+expr_node:
 | ident = IDENT { EVar ident }
 | const = constant { EConst const }
+<<<<<<< Updated upstream
 | expr_1 = expr; opperand = opperand; expr_2 = expr { EBinOp (opperand, expr_1, expr_2)}
 | expr = expr; DOT; ident = IDENT { EField (expr, ident) }
+=======
+| expr_1 = expr_node; operand = operand; expr_2 = expr_node { EBinOp (operand, expr_1, expr_2)}
+| expr_1 = expr_node; DOT; ident = IDENT { EField (expr_1, ident) }
+>>>>>>> Stashed changes
 ;
 
 typ: 
@@ -62,7 +86,7 @@ stmt:
 | ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
 | PRINT; LPAREN; expr = expr RPAREN; { SPrint expr }
 | WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { SWriteFile (file, expr)}
-| READ_FILE ; LPAREN ; file = FILE ; RPAREN { SReadFile file }
+| READ_FILE ; LPAREN ; file = FILE ; RPAREN { SReadFile (EConst (CFile file)) }
 
 declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN  { 

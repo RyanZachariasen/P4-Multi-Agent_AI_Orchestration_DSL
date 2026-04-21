@@ -14,14 +14,18 @@ type typ =
   | TFile             (** file path for builtin tools *)  
   | TRecord of name 
 
-type expr = 
+type expr =
+  { expr_node: expr_node;
+    expr_location: location}
+
+and expr_node = 
   | EVar of name
   | EConst of constant
-  | ECall  of name * expr list * name option  
+  | ECall  of name * expr_node list * name option  
       (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
           read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
-  | EField  of expr * name   (** verdict.score *)
-  | EBinOp  of binop * expr * expr  
+  | EField  of expr_node * name   (** verdict.score *)
+  | EBinOp  of binop * expr_node * expr_node 
 
 and constant =  
   | CText of string                (** raw text *)  
@@ -34,11 +38,15 @@ and constant =
 
 and binop = Add | Sub | Mul | Div | Concat  
 
-type statement =  
-  | SLet   of name * expr      (** x = f(y) on R *)  
-  | SPrint of expr  
-  | SWriteFile of expr * expr
-  | SReadFile of expr      (** write_file(path, content) *)  
+type statement = 
+  {statement_node: statement_node;
+   statement_location: location}
+
+and statement_node =  
+  | SLet   of name * expr_node      (** x = f(y) on R *)  
+  | SPrint of expr_node  
+  | SWriteFile of expr_node * expr_node
+  | SReadFile of expr_node      (** write_file(path, content) *)  
   
 type resource_declaration = {  
   resource_name: name;
@@ -83,10 +91,8 @@ type declaration =
   | DCustomType of custom_type_declaration  
 
 type workflow = {  
-  workflow_name: name;  
-  workflow_params: (name * typ) list;  
-  workflow_body: statement list;  
-  workflow_loc: location;  
+  workflow_body: statement_node list;  
+  workflow_location: location;  
 }  
   
 type program = {  
@@ -94,4 +100,3 @@ type program = {
   prog_workflow: workflow;  
 }
 
-type file = expr list
