@@ -43,5 +43,3 @@ let add_new_func (ident: Ast.name) (func: Ast.func_declaration) =
   if (Hashtbl.mem function_env ident) then
     duplicate_declaration(ident)
   else Hashtbl.add function_env ident func;
-
-
