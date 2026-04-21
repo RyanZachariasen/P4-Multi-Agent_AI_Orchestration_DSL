@@ -1,4 +1,4 @@
-open Ast
+open typed_ast
 
 (* Type til string*)
 let string_of_typ = function
@@ -43,3 +43,41 @@ let add_new_func (ident: Ast.name) (func: Ast.func_declaration) =
   if (Hashtbl.mem function_env ident) then
     duplicate_declaration(ident)
   else Hashtbl.add function_env ident func;
+
+let subtyping = match t1, t2 with
+| TCode, TText -> true
+| t1, t1 -> t1 = t2
+
+let rec expr (delta : custom_type_env) (gamma : variable_env) untyped_expr =
+  let typed_expr, typ = expr_node env untyped_expr.ast.expr_node in
+  {expr_node = te, expr_typ = typ}
+
+and expr_node (env : custom_type_env) = function
+  | EVar = x -> 
+    let ty = Hashtbl.find gamma x in
+    Evar x, ty
+  | ast.EConst(ast.CText, e) ->
+    EConst e, TText
+  | ast.EConst(ast.CInt, e) ->
+    EConst e, TInt
+  | ast.EConst(ast.CFloat, e) ->
+    EConst e, TFloat
+  | ast.EConst(ast.CBool, e) ->
+    EConst e, TBool
+  | ast.EConst(ast.CCode, e) ->
+    EConst e, TCode
+  | ast.EConst(ast.CFile, e) ->
+    EConst e, TFile
+  | ast.EConst(ast.CCustomType, e) ->
+    EConst e, TCustomType
+  | ast.ECall ({name=x; }) ->
+    
+  
+
+
+
+
+
+
+  
+
