@@ -1,7 +1,7 @@
 (** ast_v1.mli — Minimal mAI: resource-parametric functions, sequential workflow *)  
   
 type name = string  
-type locationation = { file: string; line: int; col: int }  
+type location = { file: string; line: int; col: int }  
 
 type provider = Anthropic | OpenAI | Gemini | Grok
 
@@ -54,7 +54,7 @@ type resource_declaration = {
   resource_model: string;
   max_tokens: int option;
   system_prompt: string option; 
-  resource_locationation: locationation;
+  resource_location: location;
 }  (* add more stuff like max-tokens, system prompt*)
 
 
@@ -65,7 +65,7 @@ type func_declaration = {
   func_needsResource: bool;         (** true → call site must provide "on R" *)  
   func_prompt: string option * (name * typ) list;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
   func_builtin: bool;                (** true for read_pdf etc *)  
-  func_locationation: locationation;  
+  func_location: location;  
 }  
 
 
@@ -82,7 +82,7 @@ w = 42
 type custom_type_declaration = {  
   type_name: name;  
   type_fields: (name * typ) list;  
-  type_locationation: locationation;  
+  type_location: location;  
 }
 
 type declaration =  
@@ -94,7 +94,7 @@ type workflow = {
   workflow_name: name;  
   workflow_params: (name * typ) list;  
   workflow_body: statement list;  
-  workflow_location: locationation;  
+  workflow_location: location;  
 }  
   
 type program = {  
