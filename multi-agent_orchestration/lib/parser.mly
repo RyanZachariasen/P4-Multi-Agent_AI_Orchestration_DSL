@@ -25,6 +25,8 @@
 
 %token FUNC ARROW WORKFLOW TYPE
 
+%token NEWLINE
+
 %token EOF
 
 /* Precedence rules to handle ambiguity (Week 4-5 content) */
@@ -35,18 +37,20 @@
 
 file:
 | expr_list = list(expr); EOF { expr_list };
+| stmt_list = list(stmt); EOF { stmt_list };
+| declaration_list = list (declaration); EOF { declaration_list };
 
 expr:
 | ident = IDENT { EVar ident }
 | const = constant { EConst const }
-| expr_1 = expr; opperand = opperand; expr_2 = expr { EBinOp (opperand, expr_1, expr_2)}
+| expr_1 = expr; operand = operand; expr_2 = expr { EBinOp (operand, expr_1, expr_2)}
 | expr = expr; DOT; ident = IDENT { EField (expr, ident) }
 ;
 
 typ: 
 | TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile}
 
-opperand:
+operand:
 | PLUS {Add} | MINUS {Sub} |  TIMES {Mul} | DIV {Div} | CONCAT {Concat}
 
 constant:
@@ -68,12 +72,12 @@ declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN  { 
     let (max_tokens, system_prompt) = optionals in
     DResource {
-      resourceName = ident, 
-      resourceProvider = provider, 
-      resourceModel = model, 
-      max_tokens = max_tokens, 
-      system_prompt = system_prompt, 
-      resourceLocation = { file = $startpos.pos_fname; line = $startpos.pos_lnum, col = $endpos.pos_cnum }
+      resource_name = ident; 
+      resource_provider = provider;
+      resource_model = model;
+      max_tokens = max_tokens;
+      system_prompt = system_prompt;
+      resource_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum }
     }
   }
 | TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, custom_type_field) ; RBRACE; { CCustomType (ident, exprList) }
@@ -89,9 +93,10 @@ declaration:
         func_params = func_params;
         func_return = return_type;
         func_needsResource = true;
-        func_prompt = (Some prompt, []);
+        func_prompt = Some prompt;
+        func_prompt_holes = [];
         func_builtin = false;
-        func_location = dummy_loc;
+        func_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
       } }
 
 func_parameter:
