@@ -25,6 +25,8 @@
 
 %token FUNC ARROW WORKFLOW TYPE
 
+%token NEWLINE
+
 %token EOF
 
 /* Precedence rules to handle ambiguity (Week 4-5 content) */
@@ -33,10 +35,6 @@
 %start <Ast.program> program
 %%
 
-<<<<<<< Updated upstream
-file:
-| expr_list = list(expr); EOF { expr_list };
-=======
 program:
 | decls = separated_list(NEWLINE, declaration); wf = workflow; EOF
       { { prog_decls    = decls;
@@ -48,8 +46,6 @@ workflow:
   workflow_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
 }
 
-}
->>>>>>> Stashed changes
 
 expr:
 | node = expr_node { { expr_node = node; expr_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum } } }
@@ -58,19 +54,14 @@ expr:
 expr_node:
 | ident = IDENT { EVar ident }
 | const = constant { EConst const }
-<<<<<<< Updated upstream
-| expr_1 = expr; opperand = opperand; expr_2 = expr { EBinOp (opperand, expr_1, expr_2)}
+| expr_1 = expr; operand = operand; expr_2 = expr { EBinOp (operand, expr_1, expr_2)}
 | expr = expr; DOT; ident = IDENT { EField (expr, ident) }
-=======
-| expr_1 = expr_node; operand = operand; expr_2 = expr_node { EBinOp (operand, expr_1, expr_2)}
-| expr_1 = expr_node; DOT; ident = IDENT { EField (expr_1, ident) }
->>>>>>> Stashed changes
 ;
 
 typ: 
 | TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile}
 
-opperand:
+operand:
 | PLUS {Add} | MINUS {Sub} |  TIMES {Mul} | DIV {Div} | CONCAT {Concat}
 
 constant:
@@ -92,27 +83,15 @@ declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN  { 
     let (max_tokens, system_prompt) = optionals in
     DResource {
-      resourceName = ident, 
-      resourceProvider = provider, 
-      resourceModel = model, 
-      max_tokens = max_tokens, 
-      system_prompt = system_prompt, 
-      resourceLocation = { file = $startpos.pos_fname; line = $startpos.pos_lnum, col = $endpos.pos_cnum }
+      resource_name = ident; 
+      resource_provider = provider;
+      resource_model = model;
+      max_tokens = max_tokens;
+      system_prompt = system_prompt;
+      resource_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum }
     }
   }
 | TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, custom_type_field) ; RBRACE; { CCustomType (ident, exprList) }
-
-| FUNC; ident = IDENT; LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN; ARROW; return_type = TYPE; COLON; 
-    { Hashtbl.add Typing.function_env ident (func_params, return_type) 
-      DFunc {
-        func_name=ident;
-        func_params=func_params;
-        func_return=return_type;
-        
-      }
-    }
-
-;
 
 | FUNC; ident = IDENT;
   LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN;
@@ -125,9 +104,10 @@ declaration:
         func_params = func_params;
         func_return = return_type;
         func_needsResource = true;
-        func_prompt = (Some prompt, []);
+        func_prompt = Some prompt;
+        func_prompt_holes = [];
         func_builtin = false;
-        func_location = dummy_loc;
+        func_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
       } }
 
 func_parameter:

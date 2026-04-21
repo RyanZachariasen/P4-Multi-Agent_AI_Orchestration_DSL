@@ -1,0 +1,5 @@
+Resource agent1 = anthropic(model="claude-sonnet")
+Resource agent2 = anthropic(model="claude-sonnet", max_tokens=10000)
+Resource agent3 = anthropic(model="claude-sonnet", max_tokens=10000, system_prompt="be good")
+
+workflow:
