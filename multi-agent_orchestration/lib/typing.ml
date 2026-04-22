@@ -53,13 +53,15 @@ let rec expr (delta : custom_type_env) (gamma : variable_env) untyped_expr =
   {expr_node = typed_expr; expr_typ = typ}
 
 and expr_node (delta : custom_type_env) (gamme : variable_env) = function
+(* EVar *)
   | EVar x ->
-      let ty = match Hashtbl.find_opt gamma x with
+      let type = match Hashtbl.find_opt gamma x with
         | Some t -> t
         | None   -> unbound_var x
       in
-      EVar x, ty
+      EVar x, type
 
+(* EConst *)
   | ast.EConst(ast.CText, e) ->
     EConst e, TText
   | ast.EConst(ast.CInt, e) ->
@@ -75,12 +77,13 @@ and expr_node (delta : custom_type_env) (gamme : variable_env) = function
   | ast.EConst(ast.CCustomType, e) ->
     EConst e, TCustomType
 
+(* ECall *)
   | ast.ECall (func_name, args, resource_optional) ->
     let decl = match Hashtbl.find_opt function_env func_name with
       | Some func_decl  -> func_decl
       | None            -> unbound_fun func_name
   in
-  (* Tjekker for arity*)
+      (* Tjekker for arity*)
   let expected_arguments = List.length decl.func_params in
   let receive_arguments = List.length args in
   if expected_arguments <> receive_arguments 
@@ -93,7 +96,7 @@ and expr_node (delta : custom_type_env) (gamme : variable_env) = function
       targ)
     decl.func_params args
   in
-  (* Tjekker resource*)
+      (* Tjekker resource*)
   let typed_resource = match decl.func_needsResource, resource_optional with
     | true, None    -> resource_required func_name
     | false, Some   -> resource_not_needed func_name
@@ -105,6 +108,23 @@ and expr_node (delta : custom_type_env) (gamme : variable_env) = function
     in
     ECall (func_name, typed_args, typed_resource), decl.func_return
 
+(* EField *)
+  | EField (e, field_name) ->
+    let typed_e = expr delta gamma e in
+    let field_type = match typed_e.expr_typ with
+      | TCustomType custom_name ->
+        let decl = match Hashtbl.find_opt delta custom_name with
+          | Some d -> d
+          | None   -> unbound_type custom_name
+        in
+        (match List.assoc_opt field_name decl.type_fields with
+          | Some t -> t
+          | None   -> unbound_field custom_name field_name)
+    in
+    EField (typed_e, field_name, field_type), field_type
+    
+    
+(* EBinOp *)
     
   
 
