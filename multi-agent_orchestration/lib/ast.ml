@@ -21,11 +21,11 @@ type expr =
 and expr_node = 
   | EVar of name
   | EConst of constant
-  | ECall  of name * expr_node list * name option  
+  | ECall  of name * expr list * name option  
       (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
           read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
-  | EField  of expr_node * name   (** verdict.score *)
-  | EBinOp  of binop * expr_node * expr_node 
+  | EField  of expr * name   (** verdict.score *)
+  | EBinOp  of binop * expr * expr
 
 and constant =  
   | CText of string                (** raw text *)  
@@ -43,10 +43,10 @@ type statement =
    statement_location: location}
 
 and statement_node =  
-  | SLet   of name * expr_node      (** x = f(y) on R *)  
-  | SPrint of expr_node  
-  | SWriteFile of expr_node * expr_node
-  | SReadFile of expr_node      (** write_file(path, content) *)  
+  | SLet   of name * expr      (** x = f(y) on R *)  
+  | SPrint of expr
+  | SWriteFile of expr * expr
+  | SReadFile of expr      (** write_file(path, content) *)  
   
 type resource_declaration = {  
   resource_name: name;
@@ -62,8 +62,8 @@ type func_declaration = {
   func_name: name;  
   func_params: (name * typ) list;   (** typed parameters *)  
   func_return: typ;                  (** return type = codegen directive *)  
-  func_needsResource: bool;         (** true → call site must provide "on R" *)  
-  func_prompt: string option * (name * typ) list;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
+  func_needs_resource: bool;         (** true → call site must provide "on R" *)  
+  func_prompt: string option;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
   func_builtin: bool;                (** true for read_pdf etc *)  
   func_location: location;  
 }  
