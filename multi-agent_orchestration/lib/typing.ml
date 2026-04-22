@@ -22,7 +22,7 @@ let unbound_type          ?location t     = error ?location ("Unbound type: " ^ 
 let unbound_resource      ?location r     = error ?location ("Unbound resource: " ^ r)
 let unbound_field         ?location s f   = error ?location ("Unbound field: Type " ^ s ^ " has no field " ^ f)
 let resource_required     ?location f     = error ?location ("Resource required: Call to " ^ f ^ " requires a resource")
-let duplicate_declaration ?location f     = error ?location ("Resource required: Call to " ^ f ^ " requires a resource")
+let duplicate_declaration ?location f     = error ?location ("Duplicate declaration: " ^ f ^ " is already declared")
 
 let bad_arity ?location f expected got =
   error ?location ("Bad arity: function " ^ f ^ " expects " ^
@@ -44,22 +44,35 @@ let add_new_func (ident: Ast.name) (func: Ast.func_declaration) =
     duplicate_declaration(ident)
   else Hashtbl.add function_env ident func;
 
-let subtyping = match t1, t2 with
+let check_subtype = match t1, t2 with
 | TCode, TText -> true
-| t1, t1 -> t1 = t2
+| t1, t2 -> t1 = t2
+
+let check_binop op type1 type2 = match op, type1, type2 with
+  | Concat, TText, TText -> TText
+  | Concat, TCode, TText -> TText
+  | Concat, TText, TCode -> TText
+  | Concat, TCode, TCode -> TText
+  | _, TInt,   TInt   -> TInt
+  | _, TFloat, TFloat -> TFloat
+  | _, TFloat, TInt   -> TFloat
+  | _, TInt,   TFloat -> TFloat
+  | Concat, _, _ -> error ("Concat requires Text operands")
+  | _, t1, t2    -> error ("Arithmetic requires numeric operands, got " ^
+                     string_of_typ t1 ^ " and " ^ string_of_typ t2)
 
 let rec expr (delta : custom_type_env) (gamma : variable_env) untyped_expr =
   let typed_expr, typ = expr_node delta gamma untyped_expr.expr_node in
   {expr_node = typed_expr; expr_typ = typ}
 
-and expr_node (delta : custom_type_env) (gamme : variable_env) = function
+and expr_node (delta : custom_type_env) (gamma : variable_env) = function
 (* EVar *)
   | EVar x ->
-      let type = match Hashtbl.find_opt gamma x with
+      let ty = match Hashtbl.find_opt gamma x with
         | Some t -> t
         | None   -> unbound_var x
       in
-      EVar x, type
+      EVar x, ty
 
 (* EConst *)
   | ast.EConst(ast.CText, e) ->
@@ -99,7 +112,7 @@ and expr_node (delta : custom_type_env) (gamme : variable_env) = function
       (* Tjekker resource*)
   let typed_resource = match decl.func_needsResource, resource_optional with
     | true, None    -> resource_required func_name
-    | false, Some   -> resource_not_needed func_name
+    | false, Some _ -> resource_not_needed func_name
     | false, None   -> None
     | true, Some r  ->
       (match Hashtbl.find_opt resource_env r with
@@ -109,7 +122,7 @@ and expr_node (delta : custom_type_env) (gamme : variable_env) = function
     ECall (func_name, typed_args, typed_resource), decl.func_return
 
 (* EField *)
-  | EField (e, field_name) ->
+  | ast.EField (e, field_name) ->
     let typed_e = expr delta gamma e in
     let field_type = match typed_e.expr_typ with
       | TCustomType custom_name ->
@@ -125,7 +138,12 @@ and expr_node (delta : custom_type_env) (gamme : variable_env) = function
     
     
 (* EBinOp *)
-    
+  | ast.EBinOp (op, e1, e2) ->
+    let te1 = expr delta gamma e1 in
+    let te2 = expr delta gamma e2 in
+    let result_typ = check_binop op te1.expr_typ te2.expr_typ in
+    EBinOp (op, te1, te2), result_typ
+
   
 
 
