@@ -41,10 +41,6 @@ program:
       { { prog_decls    = decls;
           prog_workflow = wf } }
 
-newline_list:
-| NEWLINE; { }
-| NEWLINE; rest = newline_list { rest} 
-
 workflow:
 | WORKFLOW ; COLON ; NEWLINE; BEGIN; body = separated_list(NEWLINE, stmt); END;  
   { { workflow_body = body;
