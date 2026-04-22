@@ -75,21 +75,22 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
       EVar x, ty
 
 (* EConst *)
-  | ast.EConst(ast.CText, e) ->
-    EConst e, TText
-  | ast.EConst(ast.CInt, e) ->
-    EConst e, TInt
-  | ast.EConst(ast.CFloat, e) ->
-    EConst e, TFloat
-  | ast.EConst(ast.CBool, e) ->
-    EConst e, TBool
-  | ast.EConst(ast.CCode, e) ->
-    EConst e, TCode
-  | ast.EConst(ast.CFile, e) ->
-    EConst e, TFile
-  | ast.EConst(ast.CCustomType, e) ->
-    EConst e, TCustomType
-
+| EConst c ->
+  let ty = match c with
+    | CText  _           -> TText
+    | CInt   _           -> TInt
+    | CFloat _           -> TFloat
+    | CBool  _           -> TBool
+    | CCode  _           -> TCode
+    | CFile  _           -> TFile
+    | CCustomType name   ->
+        let _ = match Hashtbl.find_opt delta name with
+          | Some d -> d
+          | None   -> unbound_type name
+        in
+        TCustomType name
+  in
+  EConst c, ty
 (* ECall *)
   | ast.ECall (func_name, args, resource_optional) ->
     let decl = match Hashtbl.find_opt function_env func_name with

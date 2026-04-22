@@ -56,6 +56,7 @@ rule next_tokens = parse
                     { next_tokens lexbuf }
   | "/*"            { comment lexbuf; next_tokens lexbuf }
   | "\"\"\""        { [TEXT (triple_string lexbuf)] }
+  | "->"            { [ARROW] }
   |','              { [COMMA] }
   |'.'              { [DOT] }
   |'='              { [ASSIGN] }
@@ -69,12 +70,10 @@ rule next_tokens = parse
   | '-'             { [MINUS] }
   | '*'             { [TIMES] }
   | '/'             { [DIV] }
-  | "->"            { [ARROW] }
   | integer as s
             { try [INT (int_of_string s)]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
   | ident as id     { [id_or_keyword id]}
-  | _               { raise (Lexing_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
   | eof             { [EOF] }
   | _ as c  { raise (Lexing_error ("illegal character: " ^ String.make 1 c)) }
 
