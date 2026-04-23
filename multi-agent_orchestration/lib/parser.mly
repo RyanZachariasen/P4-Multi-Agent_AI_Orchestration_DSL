@@ -2,6 +2,7 @@
   open Parsing
   open Ast
   open Typing
+  open Lexing
 %}
 
 %token <string> IDENT
@@ -32,15 +33,35 @@
 /* Precedence rules to handle ambiguity (Week 4-5 content) */
 %left PLUS MINUS
 %left TIMES DIV
-%start <Ast.file> file
+%start <Ast.program> program
 %%
 
-file:
-| expr_list = list(expr); EOF { expr_list };
-| stmt_list = list(stmt); EOF { stmt_list };
-| declaration_list = list (declaration); EOF { declaration_list };
+program:
+| NEWLINE? decls = nonempty_list(declaration); NEWLINE?;  wf = workflow; NEWLINE?; EOF;
+      { { prog_decls    = decls;
+          prog_workflow = wf } }
+
+workflow:
+| WORKFLOW ; COLON ; NEWLINE; BEGIN; body = separated_list(NEWLINE, stmt); END;  
+  { { workflow_body = body;
+    workflow_location = {
+        file = $startpos.pos_fname;
+        line = $startpos.pos_lnum;
+        col = $endpos.pos_cnum }
+    }
+  }
+
 
 expr:
+| node = expr_node
+  {
+    { expr_node = node;
+      expr_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum } 
+    }
+  }
+
+
+expr_node:
 | ident = IDENT { EVar ident }
 | const = constant { EConst const }
 | expr_1 = expr; operand = operand; expr_2 = expr { EBinOp (operand, expr_1, expr_2)}
@@ -65,8 +86,16 @@ constant:
 stmt:
 | ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
 | PRINT; LPAREN; expr = expr RPAREN; { SPrint expr }
-| WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { SWriteFile (file, expr)}
-| READ_FILE ; LPAREN ; file = FILE ; RPAREN { SReadFile file }
+| WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { 
+    SWriteFile ({
+      expr_node= EConst (CFile file);
+      expr_location={file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
+    }, expr)}
+| READ_FILE ; LPAREN ; file = FILE ; RPAREN { 
+    SReadFile {
+      expr_node= EConst (CFile file);
+      expr_location={file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
+    } } 
 
 declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN  { 
@@ -80,39 +109,46 @@ declaration:
       resource_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum }
     }
   }
-| TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, custom_type_field) ; RBRACE; { CCustomType (ident, exprList) }
+| TYPE; ident = IDENT; ASSIGN; LBRACE; field_list = separated_list(COMMA, custom_type_field) ; RBRACE; { 
+  let custom_type_declaration = {  
+    type_name=ident;  
+    type_fields=field_list;  
+    type_location={ file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };  
+  } in
+  DCustomType custom_type_declaration }
 
-| FUNC; ident = IDENT;
-  LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN;
-  ARROW; return_type = typ;
-  ON_RESOURCE;
+| FUNC; ident = IDENT; LPAREN;
+  func_params = separated_list(COMMA, func_parameter); RPAREN;
+  ARROW; return_type = typ; COLON; NEWLINE;
+  BEGIN;
   prompt = TEXT;
-    { Hashtbl.add Typing.function_env ident (func_params, return_type);
-      DFunc {
+  NEWLINE;
+  END; 
+      {
+      let function_declaration = {
         func_name = ident;
         func_params = func_params;
         func_return = return_type;
-        func_needsResource = true;
+        func_needs_resource = true;
         func_prompt = Some prompt;
-        func_prompt_holes = [];
         func_builtin = false;
         func_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
-      } }
+      } in
+      Hashtbl.add Typing.function_env ident function_declaration;
+      DFunc function_declaration }
 
 func_parameter:
 | ident = IDENT ; COLON ; typ = typ; {(ident, typ)}
 
 custom_type_field:
-| ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
+| ident = IDENT ; ASSIGN ; typ = typ { (ident, typ) }
 ;
 
 resource_optionals: 
 | { (None, None) }
-
 | COMMA ; ident = IDENT ; ASSIGN ; system_prompt = TEXT; rest = resource_optionals {
   let (max_tokens, _) = rest in
   (max_tokens, Some system_prompt) }
-
 | COMMA ; ident = IDENT ; ASSIGN ; max_tokens = INT; rest = resource_optionals {
   let (_, system_prompt) = rest in
   (Some max_tokens, system_prompt) }
