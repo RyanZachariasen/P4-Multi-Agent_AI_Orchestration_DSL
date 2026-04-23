@@ -21,9 +21,9 @@ and constant =
   | CBool of bool                (** compiler generates bool parse *)  
   | CCode of string                 (** text + fence stripping; Code <= Text *)  
   | CFile of string                   (** file path for builtin tools *)  
-  | CCustomType of name           (** user-declared record → Pydantic *)  
+  | CCustomType of (name * expr) list          (** user-declared record → Pydantic *)  
   
-type expr =
+and expr =
   { expr_node: expr_node;
     expr_location: location}
 

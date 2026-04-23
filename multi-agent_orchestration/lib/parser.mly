@@ -1,7 +1,6 @@
 %{
   open Parsing
   open Ast
-  open Typing
   open Lexing
 %}
 
@@ -16,7 +15,7 @@
 %token <float> FLOAT
 %token <bool> BOOL
 
-%token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN COLON ON_RESOURCE BEGIN END
+%token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN COLON BEGIN END
 
 %token WRITE_FILE READ_FILE PRINT
 
@@ -134,7 +133,6 @@ declaration:
         func_builtin = false;
         func_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
       } in
-      Hashtbl.add Typing.function_env ident function_declaration;
       DFunc function_declaration }
 
 func_parameter:
