@@ -75,7 +75,7 @@ rule next_tokens = parse
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
   | ident as id     { [id_or_keyword id]}
   | _               { raise (Lexing_error ("Unexpected character: " ^ Lexing.lexeme lexbuf)) }
-  | eof             { [EOF] }
+  | eof             { unindent 0 @ [EOF] } (* tilføjer END TOKENS fra unindent 0*)
   | _ as c  { raise (Lexing_error ("illegal character: " ^ String.make 1 c)) }
 
 (*--------------------------------------------------*)
