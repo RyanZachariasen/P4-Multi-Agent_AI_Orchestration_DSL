@@ -14,6 +14,15 @@ type typ =
   | TFile             (** file path for builtin tools *)  
   | TCustomType of name 
 
+and constant =  
+  | CText of string                (** raw text *)  
+  | CInt of int                  (** compiler generates int() *)  
+  | CFloat of float                (** compiler generates float() *)  
+  | CBool of bool                (** compiler generates bool parse *)  
+  | CCode of string                 (** text + fence stripping; Code <= Text *)  
+  | CFile of string                   (** file path for builtin tools *)  
+  | CCustomType of name           (** user-declared record → Pydantic *)  
+  
 type expr =
   { expr_node: expr_node;
     expr_location: location}
@@ -27,14 +36,6 @@ and expr_node =
   | EField  of expr * name   (** verdict.score *)
   | EBinOp  of binop * expr * expr
 
-and constant =  
-  | CText of string                (** raw text *)  
-  | CInt of int                  (** compiler generates int() *)  
-  | CFloat of float                (** compiler generates float() *)  
-  | CBool of bool                (** compiler generates bool parse *)  
-  | CCode of string                 (** text + fence stripping; Code <= Text *)  
-  | CFile of string                   (** file path for builtin tools *)  
-  | CCustomType of name           (** user-declared record → Pydantic *)  
 
 and binop = Add | Sub | Mul | Div | Concat  
 
