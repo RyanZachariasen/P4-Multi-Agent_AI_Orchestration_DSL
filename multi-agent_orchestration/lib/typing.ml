@@ -154,16 +154,36 @@ let check_declaration = function
         duplicate_declaration f.func_name;
       check_prompt_holes f
       Hashtbl.add function_env f.func_name f
-      DFunc {...}
+      DFunc {
+        func_name          = f.func_name;
+        func_params        = f.func_params;
+        func_return        = f.func_return;
+        func_needsResource = f.func_needsResource;
+        func_prompt        = fst f.func_prompt;
+        func_prompt_holes  = [];
+        func_builtin       = f.func_builtin;
+        func_location      = f.func_location;
+      }
 
     | ast.DResource r ->
       if Hashtbl.mem resource_env r.resource_name then
         duplicate_declaration r.resource_name;
       Hashtbl.add resource_env r.resource_name
-      DResource {...}
+      DResource {
+        resource_name     = r.resource_name;
+        resource_provider = r.resource_provider;
+        resource_model    = r.resource_model;
+        max_tokens        = r.max_tokens;
+        system_prompt     = r.system_prompt;
+        resource_location = r.resource_location;
+      }
 
     | ast.DCustomType ct ->
       if Hashtbl.mem custom_type_env ct.type_name then
         duplicate_decleration ct.type_name;
       Hashtbl.add custom_type_env ct.type_name
-      DCustomType {...}
+      DCustomType {
+        type_name     = ct.type_name;
+        type_fields   = ct.type_fields;
+        type_location = ct.type_location;
+      }
