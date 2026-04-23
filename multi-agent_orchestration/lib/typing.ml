@@ -40,7 +40,7 @@ let custom_type_env: (name, custom_type_declaration) Hashtbl.t = Hashtbl.create 
 let variable_env: (name, typ) Hashtbl.t = Hashtbl.create 8
 
 let add_new_func (ident: Ast.name) (func: Ast.func_declaration) = 
-  if (Hashtbl.mem function_env ident) then
+  if is_global ident then
     duplicate_declaration(ident)
   else Hashtbl.add function_env ident func;
 
@@ -145,12 +145,25 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
     let result_typ = check_binop op te1.expr_typ te2.expr_typ in
     EBinOp (op, te1, te2), result_typ
 
-  
+let check_prompt_holes = function
 
 
+let check_declaration = function
+    | ast.DFunc f ->
+      if Hashtbl.mem function_env f.func_name then
+        duplicate_declaration f.func_name;
+      check_prompt_holes f
+      Hashtbl.add function_env f.func_name f
+      DFunc {...}
 
+    | ast.DResource r ->
+      if Hashtbl.mem resource_env r.resource_name then
+        duplicate_declaration r.resource_name;
+      Hashtbl.add resource_env r.resource_name
+      DResource {...}
 
-
-
-  
-
+    | ast.DCustomType ct ->
+      if Hashtbl.mem custom_type_env ct.type_name then
+        duplicate_decleration ct.type_name;
+      Hashtbl.add custom_type_env ct.type_name
+      DCustomType {...}
