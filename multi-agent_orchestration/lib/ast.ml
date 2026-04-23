@@ -1,7 +1,7 @@
 (** ast_v1.mli — Minimal mAI: resource-parametric functions, sequential workflow *)  
   
 type name = string  
-type locationation = { file: string; line: int; col: int }  
+type location = { file: string; line: int; col: int }  
 
 type provider = Anthropic | OpenAI | Gemini | Grok
 
@@ -34,7 +34,7 @@ and expr_node =
       (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
           read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
   | EField  of expr * name   (** verdict.score *)
-  | EBinOp  of binop * expr * expr  
+  | EBinOp  of binop * expr * expr
 
 
 and binop = Add | Sub | Mul | Div | Concat  
@@ -45,7 +45,7 @@ type statement =
 
 and statement_node =  
   | SLet   of name * expr      (** x = f(y) on R *)  
-  | SPrint of expr  
+  | SPrint of expr
   | SWriteFile of expr * expr
   | SReadFile of expr      (** write_file(path, content) *)  
   
@@ -55,7 +55,7 @@ type resource_declaration = {
   resource_model: string;
   max_tokens: int option;
   system_prompt: string option; 
-  resource_locationation: locationation;
+  resource_location: location;
 }  (* add more stuff like max-tokens, system prompt*)
 
 
@@ -63,10 +63,10 @@ type func_declaration = {
   func_name: name;  
   func_params: (name * typ) list;   (** typed parameters *)  
   func_return: typ;                  (** return type = codegen directive *)  
-  func_needsResource: bool;         (** true → call site must provide "on R" *)  
-  func_prompt: string option * (name * typ) list;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
+  func_needs_resource: bool;         (** true → call site must provide "on R" *)  
+  func_prompt: string option;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
   func_builtin: bool;                (** true for read_pdf etc *)  
-  func_locationation: locationation;  
+  func_location: location;  
 }  
 
 
@@ -83,7 +83,7 @@ w = 42
 type custom_type_declaration = {  
   type_name: name;  
   type_fields: (name * typ) list;  
-  type_locationation: locationation;  
+  type_location: location;  
 }
 
 type declaration =  
@@ -92,10 +92,8 @@ type declaration =
   | DCustomType of custom_type_declaration  
 
 type workflow = {  
-  workflow_name: name;  
-  workflow_params: (name * typ) list;  
-  workflow_body: statement list;  
-  workflow_location: locationation;  
+  workflow_body: statement_node list;  
+  workflow_location: location;  
 }  
   
 type program = {  
@@ -103,4 +101,3 @@ type program = {
   prog_workflow: workflow;  
 }
 
-type file = expr list

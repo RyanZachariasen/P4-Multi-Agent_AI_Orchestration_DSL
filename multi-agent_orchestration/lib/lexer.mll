@@ -74,10 +74,8 @@ rule next_tokens = parse
             { try [INT (int_of_string s)]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
   | ident as id     { [id_or_keyword id]}
-  | eof             { [EOF] }
+  | eof             { unindent 0 @ [EOF] } (* appends END TOKENS from unindent 0*)
   | _ as c  { raise (Lexing_error ("illegal character: " ^ String.make 1 c)) }
-
-(*--------------------------------------------------*)
 
 
 
