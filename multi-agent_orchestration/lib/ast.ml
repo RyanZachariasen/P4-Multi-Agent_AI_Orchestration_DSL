@@ -64,7 +64,8 @@ type func_declaration = {
   func_params: (name * typ) list;   (** typed parameters *)  
   func_return: typ;                  (** return type = codegen directive *)  
   func_needs_resource: bool;         (** true → call site must provide "on R" *)  
-  func_prompt: string option;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
+  func_prompt: string option;        (** prompt template **)
+  func_prompt_holes:  (name * typ) list; (** prompt holes that corresponds to the func_params **)
   func_builtin: bool;                (** true for read_pdf etc *)  
   func_location: location;  
 }  

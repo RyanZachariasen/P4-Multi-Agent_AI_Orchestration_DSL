@@ -143,6 +143,15 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
     let result_typ = check_binop op te1.expr_typ te2.expr_typ in
     EBinOp (op, te1, te2), result_typ
 
+let extract_holes prompt =
+  let regex = Str.regexp "{\\([a-zA-Z_][a-zA-Z0-9_]*\\)}" in
+  let rec find_hole pos =
+    match Str.search_forward regex prompt pos with
+    | exception Not_found -> []
+    | _ -> Str.matched_group 1 prompt :: find_from (Str.match_end ())
+  in
+  find_from 0
+  
 let check_prompt_holes = function
 
 
