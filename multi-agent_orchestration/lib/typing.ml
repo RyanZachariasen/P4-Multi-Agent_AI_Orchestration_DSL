@@ -10,8 +10,6 @@ let string_of_typ = function
   | TFloat   -> "Float"
   | TCustomType s -> s
 
-
-
 (* Error handling*)
 exception Type_error of location option * string
 let error ?location msg = raise (Type_error (location, msg))
@@ -23,12 +21,11 @@ let unbound_resource      ?location r     = error ?location ("Unbound resource: 
 let unbound_field         ?location s f   = error ?location ("Unbound field: Type " ^ s ^ " has no field " ^ f)
 let resource_required     ?location f     = error ?location ("Resource required: Call to " ^ f ^ " requires a resource")
 let duplicate_declaration ?location f     = error ?location ("Duplicate declaration: " ^ f ^ " is already declared")
-
+let resource_not_needed   ?location f     = error ?location ("Resource not needed: " ^ f ^ " does not take a resource")
 let bad_arity ?location f expected got =
   error ?location ("Bad arity: function " ^ f ^ " expects " ^
               string_of_int expected ^ " arguments, got " ^
               string_of_int got)
-
 let type_mismatch ?location t1 t2 =
   error ?location ("Type mismatch: expected " ^ string_of_typ t2 ^
               ", got " ^ string_of_typ t1)
@@ -44,7 +41,7 @@ let add_new_func (ident: Ast.name) (func: Ast.func_declaration) =
     duplicate_declaration(ident)
   else Hashtbl.add function_env ident func;
 
-let check_subtype = match t1, t2 with
+let check_subtype t1 t2= match t1, t2 with
 | TCode, TText -> true
 | t1, t2 -> t1 = t2
 
@@ -106,7 +103,8 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
   let typed_args = List.map2
     (fun (_, param_typ) arg ->
       let targ = expr delta gamma arg in
-      check_subtype targ.expr_typ param_typ;
+      if not (check_subtype targ.expr_typ param_typ) then
+        type_mismatch targ.expr_typ param_typ;
       targ)
     decl.func_params args
   in
@@ -152,38 +150,41 @@ let check_declaration = function
     | ast.DFunc f ->
       if Hashtbl.mem function_env f.func_name then
         duplicate_declaration f.func_name;
-      check_prompt_holes f
-      Hashtbl.add function_env f.func_name f
-      DFunc {
+      check_prompt_holes f;
+      let typed_f = {
         func_name          = f.func_name;
         func_params        = f.func_params;
         func_return        = f.func_return;
-        func_needsResource = f.func_needsResource;
-        func_prompt        = fst f.func_prompt;
-        func_prompt_holes  = [];
+        func_needsResource = f.func_needs_resource;
+        func_prompt        = f.func_prompt;
+        func_prompt_holes  = f.func_params;
         func_builtin       = f.func_builtin;
         func_location      = f.func_location;
-      }
+      } in
+      Hashtbl.add function_env f.func_name typed_f;
+      DFunc typed_f
 
     | ast.DResource r ->
       if Hashtbl.mem resource_env r.resource_name then
         duplicate_declaration r.resource_name;
-      Hashtbl.add resource_env r.resource_name
-      DResource {
+      let typed_r = {
         resource_name     = r.resource_name;
         resource_provider = r.resource_provider;
         resource_model    = r.resource_model;
         max_tokens        = r.max_tokens;
         system_prompt     = r.system_prompt;
         resource_location = r.resource_location;
-      }
+      } in
+      Hashtbl.add resource_env r.resource_name typed_r;
+      DResource typed_r 
 
     | ast.DCustomType ct ->
       if Hashtbl.mem custom_type_env ct.type_name then
-        duplicate_decleration ct.type_name;
-      Hashtbl.add custom_type_env ct.type_name
-      DCustomType {
+        duplicate_declaration ct.type_name;
+      let typed_ct = {
         type_name     = ct.type_name;
         type_fields   = ct.type_fields;
         type_location = ct.type_location;
-      }
+      } in
+      Hashtbl.add custom_type_env ct.type_name typed_ct;
+      DCustomType typed_ct
