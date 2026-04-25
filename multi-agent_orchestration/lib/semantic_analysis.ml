@@ -16,9 +16,32 @@ let resource_env: (name, resource_declaration) Hashtbl.t = Hashtbl.create 8
 let custom_type_env: (name, custom_type_declaration) Hashtbl.t = Hashtbl.create 8
 let variable_env: (name, typ) Hashtbl.t = Hashtbl.create 8
 
+let rec check_program (program: Ast.program) = 
+  check_workflow program.prog_workflow;
+  List.iter (fun declaration -> check_declaration declaration) program.prog_decls
+  
+and check_workflow (workflow : Ast.workflow) =
+  List.iter (fun s ->  check_statement s) workflow.workflow_body;
 
+and check_declaration (declaration: Ast.declaration) =
+  match declaration with
+  | DFunc func_declaration -> 
+      let func_name = func_declaration.func_name in
+      if (Hashtbl.mem function_env func_name) then
+        duplicate_declaration func_declaration.func_location func_name
+      else Hashtbl.add function_env func_name func_declaration;
+  | DCustomType custom_type_declaration -> 
+      let type_name = custom_type_declaration.type_name in
+      if (Hashtbl.mem custom_type_env type_name) then
+        duplicate_declaration custom_type_declaration.type_location type_name
+      else Hashtbl.add custom_type_env type_name custom_type_declaration;
+  | DResource resource_declaration -> 
+      let name = resource_declaration.resource_name in
+      if (Hashtbl.mem resource_env name) then
+        duplicate_declaration resource_declaration.resource_location name
+      else Hashtbl.add resource_env name resource_declaration;
 
-let rec check_expr expr = check_expr_node expr.expr_node expr.expr_location
+and check_expr expr = check_expr_node expr.expr_node expr.expr_location
 
 and check_expr_node (expr_node: expr_node) (location: location) =
   match expr_node with
@@ -55,8 +78,3 @@ and check_statement_node (statement_node: statement_node) (location: Ast.locatio
   | SPrint expr -> check_expr expr
   | SWriteFile (expr_1, expr_2) -> check_expr expr_1; check_expr expr_2;
   | SReadFile (expr) -> check_expr expr
-
-and add_new_func (ident: name) (func: func_declaration) (location: location) = 
-  if (Hashtbl.mem function_env ident) then
-    duplicate_declaration location ident
-  else Hashtbl.add function_env ident func;;

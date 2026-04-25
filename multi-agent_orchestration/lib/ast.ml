@@ -30,7 +30,7 @@ and expr =
 and expr_node = 
   | EVar of name
   | EConst of constant
-  | ECall  of name * expr list * name option  
+  | ECall  of name * expr list * name  
       (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
           read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
   | EField  of expr * name   (** verdict.score *)
@@ -92,7 +92,7 @@ type declaration =
   | DCustomType of custom_type_declaration  
 
 type workflow = {  
-  workflow_body: statement_node list;  
+  workflow_body: statement list;  
   workflow_location: location;  
 }  
   

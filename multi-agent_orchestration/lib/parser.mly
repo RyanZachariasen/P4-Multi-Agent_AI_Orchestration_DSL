@@ -83,6 +83,14 @@ constant:
 ;
 
 stmt:
+| node = stmt_node
+  {
+    { statement_node = node;
+      statement_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum } 
+    }
+  } 
+
+stmt_node:
 | ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
 | PRINT; LPAREN; expr = expr RPAREN; { SPrint expr }
 | WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { 

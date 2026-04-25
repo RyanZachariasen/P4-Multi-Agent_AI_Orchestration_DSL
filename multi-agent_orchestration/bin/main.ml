@@ -8,10 +8,17 @@ let handle_no_filename_given () : string =
   Printf.eprintf "No file given, trying main.mai\n";
   "main.mai";;
 
-let parse_file (filename : string) (lexbuf) = 
-      let _ast = Parser.program Lexer.next_token lexbuf in
-      Printf.printf "Successfully parsed: %s\n" filename;;
+let parse_file (filename : string) (lexbuf) : Ast.program = 
+      let ast = Parser.program Lexer.next_token lexbuf in
+      Printf.printf "Successfully parsed: %s\n" filename;
+      ast;;
 
+let check_semantics (program: Ast.program) =
+      try 
+        Semantic_analysis.check_program program;
+        Printf.printf "Successfully checked semantics\n";
+      with Semantic_analysis.Semantic_error (location, message) -> 
+        Printf.printf "Error in file %s %i:%i %s" location.file location.line location.col message;;
 
 
 let handle_lexer_error (error_message : string) (lexbuf: Lexing.lexbuf) = 
@@ -35,8 +42,11 @@ let () =
     
 
     try
-      parse_file filename lexbuf;
-      close_in file_channel
+      let ast = parse_file filename lexbuf in
+      close_in file_channel;
+      check_semantics ast
+
+
     with
       | Lexer.Lexing_error error_message ->
         handle_lexer_error error_message lexbuf

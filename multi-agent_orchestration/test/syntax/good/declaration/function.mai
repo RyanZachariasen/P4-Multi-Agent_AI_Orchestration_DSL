@@ -1,7 +1,6 @@
 func code(input: Code) -> Code:
     "code something"
 
-
 Resource agent1 = anthropic("claude-sonnet")
 
 workflow:
