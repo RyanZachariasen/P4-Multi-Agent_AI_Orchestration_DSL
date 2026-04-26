@@ -128,7 +128,7 @@ declaration:
   func_params = separated_list(COMMA, func_parameter); RPAREN;
   ARROW; return_type = typ; COLON; NEWLINE;
   BEGIN;
-  prompt = TEXT;
+  prompt = list(prompt_part); 
   NEWLINE;
   END; 
       {
@@ -137,11 +137,15 @@ declaration:
         func_params = func_params;
         func_return = return_type;
         func_needs_resource = true;
-        func_prompt = Some prompt;
+        func_prompt = prompt;
         func_builtin = false;
         func_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
       } in
       DFunc function_declaration }
+
+prompt_part:
+| text = TEXT { PromptText text }
+| expr = expr { PromptHole expr }
 
 func_parameter:
 | ident = IDENT ; COLON ; typ = typ; {(ident, typ)}

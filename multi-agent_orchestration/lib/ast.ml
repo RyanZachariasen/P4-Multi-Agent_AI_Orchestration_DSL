@@ -58,27 +58,19 @@ type resource_declaration = {
   resource_location: location;
 }  (* add more stuff like max-tokens, system prompt*)
 
+type prompt_part = 
+  | PromptText of string
+  | PromptHole of expr
 
 type func_declaration = {
   func_name: name;  
-  func_params: (name * typ) list;   (** typed parameters *)  
-  func_return: typ;                  (** return type = codegen directive *)  
-  func_needs_resource: bool;         (** true → call site must provide "on R" *)  
-  func_prompt: string option;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
-  func_builtin: bool;                (** true for read_pdf etc *)  
+  func_params: (name * typ) list;
+  func_return: typ;
+  func_needs_resource: bool;     
+  func_prompt: prompt_part list;
+  func_builtin: bool; 
   func_location: location;  
 }  
-
-
-(*
-x = read_file("hello.txt")
-y = read_code("hello.py")
-z = read_pdf("hello.pdf")
-q = "hello"
-w = 42
-
-
-*)
 
 type custom_type_declaration = {  
   type_name: name;  
