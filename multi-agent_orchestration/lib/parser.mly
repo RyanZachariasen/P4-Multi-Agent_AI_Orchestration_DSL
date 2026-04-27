@@ -17,13 +17,15 @@
 
 %token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN COLON ON_RESOURCE BEGIN END
 
-%token WRITE_FILE READ_FILE PRINT
+%token LET WRITE_FILE READ_FILE PRINT
 
 %token PLUS MINUS TIMES DIV CONCAT
 
 %token RESOURCE ANTHROPIC OPENAI GEMINI GROK
 
 %token FUNC ARROW WORKFLOW TYPE
+
+%token NEWLINE
 
 %token EOF
 
@@ -33,10 +35,6 @@
 %start <Ast.program> program
 %%
 
-<<<<<<< Updated upstream
-file:
-| expr_list = list(expr); EOF { expr_list };
-=======
 program:
 | decls = separated_list(NEWLINE, declaration); wf = workflow; EOF
       { { prog_decls    = decls;
@@ -49,7 +47,6 @@ workflow:
 }
 
 }
->>>>>>> Stashed changes
 
 expr:
 | node = expr_node { { expr_node = node; expr_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum } } }
@@ -58,19 +55,19 @@ expr:
 expr_node:
 | ident = IDENT { EVar ident }
 | const = constant { EConst const }
-<<<<<<< Updated upstream
-| expr_1 = expr; opperand = opperand; expr_2 = expr { EBinOp (opperand, expr_1, expr_2)}
-| expr = expr; DOT; ident = IDENT { EField (expr, ident) }
-=======
-| expr_1 = expr_node; operand = operand; expr_2 = expr_node { EBinOp (operand, expr_1, expr_2)}
+| ident = IDENT; LPAREN; args = separated_list(COMMA, expr); RPAREN
+    { ECall (ident, List.map (fun e -> e.expr_node) args, None) }
+
+| ident = IDENT; LPAREN; args = separated_list(COMMA, expr); RPAREN; ON_RESOURCE; r = IDENT
+    { ECall (ident, List.map (fun e -> e.expr_node) args, Some r) }
 | expr_1 = expr_node; DOT; ident = IDENT { EField (expr_1, ident) }
->>>>>>> Stashed changes
+| expr_1 = expr_node; operand = operand; expr_2 = expr_node { EBinOp (operand, expr_1, expr_2)}
 ;
 
 typ: 
-| TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile}
+| TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile} | ident = IDENT { TRecord ident }
 
-opperand:
+operand:
 | PLUS {Add} | MINUS {Sub} |  TIMES {Mul} | DIV {Div} | CONCAT {Concat}
 
 constant:
@@ -82,37 +79,40 @@ constant:
 | const = FILE { CFile const }
 ;
 
+
 stmt:
-| ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
-| PRINT; LPAREN; expr = expr RPAREN; { SPrint expr }
-| WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { SWriteFile (file, expr)}
+| LET; ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr.expr_node) }
+| PRINT; LPAREN; expr = expr; RPAREN; { SPrint expr.expr_node }
+| WRITE_FILE; LPAREN; file = FILE; COMMA; content = expr; RPAREN { SWriteFile (EConst (CFile file), content.expr_node) }
 | READ_FILE ; LPAREN ; file = FILE ; RPAREN { SReadFile (EConst (CFile file)) }
 
 declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN  { 
     let (max_tokens, system_prompt) = optionals in
     DResource {
-      resourceName = ident, 
-      resourceProvider = provider, 
-      resourceModel = model, 
-      max_tokens = max_tokens, 
-      system_prompt = system_prompt, 
-      resourceLocation = { file = $startpos.pos_fname; line = $startpos.pos_lnum, col = $endpos.pos_cnum }
+      resource_name = ident;
+      resource_provider = provider;
+      resource_model = model;
+      max_tokens = max_tokens;
+      system_prompt = system_prompt;
+      resource_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum }
     }
   }
-| TYPE; ident = IDENT; ASSIGN; LBRACE; exprList = separated_list(COMMA, custom_type_field) ; RBRACE; { CCustomType (ident, exprList) }
-
-| FUNC; ident = IDENT; LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN; ARROW; return_type = TYPE; COLON; 
-    { Hashtbl.add Typing.function_env ident (func_params, return_type) 
-      DFunc {
-        func_name=ident;
-        func_params=func_params;
-        func_return=return_type;
-        
-      }
+| TYPE; ident = IDENT; ASSIGN; LBRACE;
+  fields = separated_list(COMMA, custom_type_field);
+  RBRACE;
+  {
+    DCustomType {
+      type_name = ident;
+      type_fields = fields;
+      type_location = {
+        file = $startpos.pos_fname;
+        line = $startpos.pos_lnum;
+        col = $startpos.pos_cnum;
+      };
     }
+  }
 
-;
 
 | FUNC; ident = IDENT;
   LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN;
@@ -134,8 +134,8 @@ func_parameter:
 | ident = IDENT ; COLON ; typ = typ; {(ident, typ)}
 
 custom_type_field:
-| ident = IDENT ; ASSIGN ; expr = expr { (ident, expr) }
-;
+| ident = IDENT; COLON; typ = typ { (ident, typ) }
+
 
 resource_optionals: 
 | { (None, None) }
