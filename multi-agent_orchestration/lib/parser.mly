@@ -36,7 +36,7 @@
 %%
 
 program:
-| decls = separated_list(NEWLINE, declaration); wf = workflow; EOF
+| NEWLINE? decls = nonempty_list(declaration); NEWLINE?;  wf = workflow; NEWLINE?; EOF;
       { { prog_decls    = decls;
           prog_workflow = wf } }
 
@@ -167,11 +167,9 @@ custom_type_field:
 
 resource_optionals: 
 | { (None, None) }
-
 | COMMA ; ident = IDENT ; ASSIGN ; system_prompt = TEXT; rest = resource_optionals {
   let (max_tokens, _) = rest in
   (max_tokens, Some system_prompt) }
-
 | COMMA ; ident = IDENT ; ASSIGN ; max_tokens = INT; rest = resource_optionals {
   let (_, system_prompt) = rest in
   (Some max_tokens, system_prompt) }

@@ -48,6 +48,7 @@ let letter = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let ident = (letter | '_') (letter | digit | '_')*
 let integer = '0' | ['1'-'9'] digit*
+let float = integer '.' digit+
 let space = ' ' | '\t'
 
 rule next_tokens = parse
@@ -71,6 +72,7 @@ rule next_tokens = parse
   | '-'             { [MINUS] }
   | '*'             { [TIMES] }
   | '/'             { [DIV] }
+  | float as s       { [FLOAT (float_of_string s)] }
   | integer as s
             { try [INT (int_of_string s)]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
