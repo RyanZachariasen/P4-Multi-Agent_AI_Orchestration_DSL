@@ -1,0 +1,3 @@
+Resource agent1 = gemini(max_tokens=10000, system_prompt="be good")
+
+workflow:
