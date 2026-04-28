@@ -65,7 +65,6 @@ type func_declaration = {
   func_return: typ;                  (** return type = codegen directive *)  
   func_needs_resource: bool;         (** true → call site must provide "on R" *)  
   func_prompt: string option;        (** prompt template **)
-  func_prompt_holes:  (name * typ) list; (** prompt holes that corresponds to the func_params **)
   func_builtin: bool;                (** true for read_pdf etc *)  
   func_location: location;  
 }  
