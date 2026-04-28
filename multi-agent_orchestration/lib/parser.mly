@@ -1,7 +1,7 @@
 %{
   open Parsing
   open Ast
-  open Typing
+  open Lexing
 %}
 
 %token <string> IDENT
@@ -41,31 +41,37 @@ program:
           prog_workflow = wf } }
 
 workflow:
-| WORKFLOW ; COLON ; BEGIN ; body = separated_list(NEWLINE, stmt) ; END { 
-{ workflow_body = body;
-  workflow_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
-}
-
-}
+| WORKFLOW ; COLON ; NEWLINE; BEGIN; body = separated_list(NEWLINE, stmt); END;  
+  { { workflow_body = body;
+    workflow_location = {
+        file = $startpos.pos_fname;
+        line = $startpos.pos_lnum;
+        col = $endpos.pos_cnum }
+    }
+  }
 
 expr:
-| node = expr_node { { expr_node = node; expr_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum } } }
-
+| node = expr_node
+  {
+    { expr_node = node;
+      expr_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum } 
+    }
+  }
 
 expr_node:
 | ident = IDENT { EVar ident }
 | const = constant { EConst const }
 | ident = IDENT; LPAREN; args = separated_list(COMMA, expr); RPAREN
-    { ECall (ident, List.map (fun e -> e.expr_node) args, None) }
+    { ECall (ident, List.map (fun e -> e) args, None) }
 
 | ident = IDENT; LPAREN; args = separated_list(COMMA, expr); RPAREN; ON_RESOURCE; r = IDENT
-    { ECall (ident, List.map (fun e -> e.expr_node) args, Some r) }
-| expr_1 = expr_node; DOT; ident = IDENT { EField (expr_1, ident) }
-| expr_1 = expr_node; operand = operand; expr_2 = expr_node { EBinOp (operand, expr_1, expr_2)}
+    { ECall (ident, List.map (fun e -> e) args, Some r) }
+| expr_1 = expr; DOT; ident = IDENT { EField (expr_1, ident) }
+| expr_1 = expr; operand = operand; expr_2 = expr { EBinOp (operand, expr_1, expr_2)}
 ;
 
 typ: 
-| TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile} | ident = IDENT { TRecord ident }
+| TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile} | ident = IDENT { TCustomType ident }
 
 operand:
 | PLUS {Add} | MINUS {Sub} |  TIMES {Mul} | DIV {Div} | CONCAT {Concat}
@@ -79,12 +85,27 @@ constant:
 | const = FILE { CFile const }
 ;
 
-
 stmt:
-| LET; ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr.expr_node) }
-| PRINT; LPAREN; expr = expr; RPAREN; { SPrint expr.expr_node }
-| WRITE_FILE; LPAREN; file = FILE; COMMA; content = expr; RPAREN { SWriteFile (EConst (CFile file), content.expr_node) }
-| READ_FILE ; LPAREN ; file = FILE ; RPAREN { SReadFile (EConst (CFile file)) }
+| node = stmt_node
+  {
+    { statement_node = node;
+      statement_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum } 
+    }
+  } 
+
+stmt_node:
+| ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
+| PRINT; LPAREN; expr = expr RPAREN; { SPrint expr }
+| WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { 
+    SWriteFile ({
+      expr_node= EConst (CFile file);
+      expr_location={file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
+    }, expr)}
+| READ_FILE ; LPAREN ; file = FILE ; RPAREN { 
+    SReadFile {
+      expr_node= EConst (CFile file);
+      expr_location={file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
+    } } 
 
 declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN  { 
@@ -114,21 +135,28 @@ declaration:
   }
 
 
-| FUNC; ident = IDENT;
-  LPAREN; func_params = separated_list(COMMA, func_parameter); RPAREN;
-  ARROW; return_type = typ;
-  ON_RESOURCE;
-  prompt = TEXT;
-    { Hashtbl.add Typing.function_env ident (func_params, return_type);
-      DFunc {
+| FUNC; ident = IDENT; LPAREN;
+  func_params = separated_list(COMMA, func_parameter); RPAREN;
+  ARROW; return_type = typ; COLON; NEWLINE;
+  BEGIN;
+  prompt = list(prompt_part); 
+  NEWLINE;
+  END; 
+      {
+      let function_declaration = {
         func_name = ident;
         func_params = func_params;
         func_return = return_type;
-        func_needsResource = true;
-        func_prompt = (Some prompt, []);
+        func_needs_resource = true;
+        func_prompt = prompt;
         func_builtin = false;
-        func_location = dummy_loc;
-      } }
+        func_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
+      } in
+      DFunc function_declaration }
+
+prompt_part:
+| text = TEXT { PromptText text }
+| expr = expr { PromptHole expr }
 
 func_parameter:
 | ident = IDENT ; COLON ; typ = typ; {(ident, typ)}

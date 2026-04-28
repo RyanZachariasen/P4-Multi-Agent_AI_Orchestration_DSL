@@ -12,20 +12,7 @@ type typ =
   | TBool                 (** compiler generates bool parse *)  
   | TCode                  (** text + fence stripping; Code <= Text *)  
   | TFile             (** file path for builtin tools *)  
-  | TRecord of name 
-
-type expr =
-  { expr_node: expr_node;
-    expr_location: location}
-
-and expr_node = 
-  | EVar of name
-  | EConst of constant
-  | ECall  of name * expr_node list * name option  
-      (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
-          read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
-  | EField  of expr_node * name   (** verdict.score *)
-  | EBinOp  of binop * expr_node * expr_node 
+  | TCustomType of name 
 
 and constant =  
   | CText of string                (** raw text *)  
@@ -34,7 +21,21 @@ and constant =
   | CBool of bool                (** compiler generates bool parse *)  
   | CCode of string                 (** text + fence stripping; Code <= Text *)  
   | CFile of string                   (** file path for builtin tools *)  
-  | CCustomType of name           (** user-declared record → Pydantic *)  
+  | CCustomType of (name * expr) list          (** user-declared record → Pydantic *)  
+  
+and expr =
+  { expr_node: expr_node;
+    expr_location: location}
+
+and expr_node = 
+  | EVar of name
+  | EConst of constant
+  | ECall  of name * expr list * name option
+      (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
+          read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
+  | EField  of expr * name   (** verdict.score *)
+  | EBinOp  of binop * expr * expr
+
 
 and binop = Add | Sub | Mul | Div | Concat  
 
@@ -43,10 +44,10 @@ type statement =
    statement_location: location}
 
 and statement_node =  
-  | SLet   of name * expr_node      (** x = f(y) on R *)  
-  | SPrint of expr_node  
-  | SWriteFile of expr_node * expr_node
-  | SReadFile of expr_node      (** write_file(path, content) *)  
+  | SLet   of name * expr      (** x = f(y) on R *)  
+  | SPrint of expr
+  | SWriteFile of expr * expr
+  | SReadFile of expr      (** write_file(path, content) *)  
   
 type resource_declaration = {  
   resource_name: name;
@@ -57,27 +58,19 @@ type resource_declaration = {
   resource_location: location;
 }  (* add more stuff like max-tokens, system prompt*)
 
+type prompt_part = 
+  | PromptText of string
+  | PromptHole of expr
 
 type func_declaration = {
   func_name: name;  
-  func_params: (name * typ) list;   (** typed parameters *)  
-  func_return: typ;                  (** return type = codegen directive *)  
-  func_needsResource: bool;         (** true → call site must provide "on R" *)  
-  func_prompt: string option * (name * typ) list;        (** prompt template with {holes} and computed either at parsing or and type checking time the list of used parameters as holes — maybe you can remove that part for now *)  
-  func_builtin: bool;                (** true for read_pdf etc *)  
+  func_params: (name * typ) list;
+  func_return: typ;
+  func_needs_resource: bool;     
+  func_prompt: prompt_part list;
+  func_builtin: bool; 
   func_location: location;  
 }  
-
-
-(*
-x = read_file("hello.txt")
-y = read_code("hello.py")
-z = read_pdf("hello.pdf")
-q = "hello"
-w = 42
-
-
-*)
 
 type custom_type_declaration = {  
   type_name: name;  
@@ -91,7 +84,7 @@ type declaration =
   | DCustomType of custom_type_declaration  
 
 type workflow = {  
-  workflow_body: statement_node list;  
+  workflow_body: statement list;  
   workflow_location: location;  
 }  
   
@@ -99,4 +92,3 @@ type program = {
   prog_decls: declaration list;  
   prog_workflow: workflow;  
 }
-
