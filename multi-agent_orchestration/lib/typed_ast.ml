@@ -54,17 +54,20 @@ type statement =
   | SReadFile  of expr
 
 
+type prompt_part =
+  | PromptText of string
+  | PromptHole of expr   
+
 type func_declaration = {
   func_name:          name;
   func_params:        (name * typ) list;
   func_return:        typ;
   func_needsResource: bool;
-  func_prompt:        string option;       (* Prompt og prompt holes delt op*)
+  func_prompt:        prompt_part list; 
   func_prompt_holes:  (name * typ) list;
   func_builtin:       bool;
   func_location:      location;
 }
-
 type custom_type_declaration = {
   type_name:     name;
   type_fields:   (name * typ) list;

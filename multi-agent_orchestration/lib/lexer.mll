@@ -48,6 +48,7 @@ let letter = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let ident = (letter | '_') (letter | digit | '_')*
 let integer = '0' | ['1'-'9'] digit*
+let float = integer '.' digit+
 let space = ' ' | '\t'
 
 rule next_tokens = parse
@@ -56,6 +57,7 @@ rule next_tokens = parse
                     { next_tokens lexbuf }
   | "/*"            { comment lexbuf; next_tokens lexbuf }
   | "\"\"\""        { [TEXT (triple_string lexbuf)] }
+  | "$"             { [TEXT (triple_string lexbuf)] }
   | "->"            { [ARROW] }
   |','              { [COMMA] }
   |'.'              { [DOT] }
@@ -70,6 +72,7 @@ rule next_tokens = parse
   | '-'             { [MINUS] }
   | '*'             { [TIMES] }
   | '/'             { [DIV] }
+  | float as s       { [FLOAT (float_of_string s)] }
   | integer as s
             { try [INT (int_of_string s)]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
@@ -96,6 +99,7 @@ and comment = parse
 
 and triple_string = parse
   | "\"\"\""        { let s = Buffer.contents string_buffer in Buffer.reset string_buffer; s }
+  | "$"             { let s = Buffer.contents string_buffer in Buffer.reset string_buffer; s}
   | _ as c          { Buffer.add_char string_buffer c; triple_string lexbuf }
   | eof             { raise (Lexing_error "unterminated triple string") }
 

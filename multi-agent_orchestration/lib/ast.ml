@@ -21,16 +21,17 @@ and constant =
   | CBool of bool                (** compiler generates bool parse *)  
   | CCode of string                 (** text + fence stripping; Code <= Text *)  
   | CFile of string                   (** file path for builtin tools *)  
-  | CCustomType of name           (** user-declared record → Pydantic *)  
+
+  | CCustomType of (name * expr) list          (** user-declared record → Pydantic *)  
   
-type expr =
+and expr =
   { expr_node: expr_node;
     expr_location: location}
 
 and expr_node = 
   | EVar of name
   | EConst of constant
-  | ECall  of name * expr list * name option  
+  | ECall  of name * expr list * name option
       (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
           read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
   | EField  of expr * name   (** verdict.score *)
@@ -58,27 +59,19 @@ type resource_declaration = {
   resource_location: location;
 }  (* add more stuff like max-tokens, system prompt*)
 
+type prompt_part = 
+  | PromptText of string
+  | PromptHole of expr
 
 type func_declaration = {
   func_name: name;  
-  func_params: (name * typ) list;   (** typed parameters *)  
-  func_return: typ;                  (** return type = codegen directive *)  
-  func_needs_resource: bool;         (** true → call site must provide "on R" *)  
-  func_prompt: string option;        (** prompt template **)
-  func_builtin: bool;                (** true for read_pdf etc *)  
+  func_params: (name * typ) list;
+  func_return: typ;
+  func_needs_resource: bool;     
+  func_prompt: prompt_part list;
+  func_builtin: bool; 
   func_location: location;  
 }  
-
-
-(*
-x = read_file("hello.txt")
-y = read_code("hello.py")
-z = read_pdf("hello.pdf")
-q = "hello"
-w = 42
-
-
-*)
 
 type custom_type_declaration = {  
   type_name: name;  
@@ -92,7 +85,7 @@ type declaration =
   | DCustomType of custom_type_declaration  
 
 type workflow = {  
-  workflow_body: statement_node list;  
+  workflow_body: statement list;  
   workflow_location: location;  
 }  
   
@@ -100,4 +93,3 @@ type program = {
   prog_decls: declaration list;  
   prog_workflow: workflow;  
 }
-

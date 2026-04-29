@@ -1,7 +1,7 @@
-open typed_ast
+open Typed_ast
 
 (* Type til string*)
-let string_of_typ = function
+let string_of_typ (t : typ) : string = match t with
   | TText    -> "Text"
   | TInt     -> "Int"
   | TBool    -> "Bool"
@@ -36,16 +36,11 @@ let resource_env: (name, resource_declaration) Hashtbl.t = Hashtbl.create 8
 let custom_type_env: (name, custom_type_declaration) Hashtbl.t = Hashtbl.create 8
 let variable_env: (name, typ) Hashtbl.t = Hashtbl.create 8
 
-let add_new_func (ident: Ast.name) (func: Ast.func_declaration) = 
-  if is_global ident then
-    duplicate_declaration(ident)
-  else Hashtbl.add function_env ident func;
-
-let check_subtype t1 t2= match t1, t2 with
+let check_subtype (t1 : typ) (t2 : typ) : bool = match t1, t2 with
 | TCode, TText -> true
 | t1, t2 -> t1 = t2
 
-let check_binop op type1 type2 = match op, type1, type2 with
+let check_binop (op : binop) (type1 : typ) (type2 : typ) : typ = match op, type1, type2 with
   | Concat, TText, TText -> TText
   | Concat, TCode, TText -> TText
   | Concat, TText, TCode -> TText
@@ -58,11 +53,11 @@ let check_binop op type1 type2 = match op, type1, type2 with
   | _, t1, t2    -> error ("Arithmetic requires numeric operands, got " ^
                      string_of_typ t1 ^ " and " ^ string_of_typ t2)
 
-let rec expr (delta : custom_type_env) (gamma : variable_env) untyped_expr =
+let rec expr (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name, typ) Hashtbl.t) (untyped_expr : Ast.expr) : expr =
   let typed_expr, typ = expr_node delta gamma untyped_expr.expr_node in
   {expr_node = typed_expr; expr_typ = typ}
 
-and expr_node (delta : custom_type_env) (gamma : variable_env) = function
+and expr_node (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name, typ) Hashtbl.t) (node : Ast.expr_node) : expr_node * typ = match node with
 (* EVar *)
   | EVar x ->
       let ty = match Hashtbl.find_opt gamma x with
@@ -89,7 +84,7 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
   in
   EConst c, ty
 (* ECall *)
-  | ast.ECall (func_name, args, resource_optional) ->
+  | Ast.ECall (func_name, args, resource_optional) ->
     let decl = match Hashtbl.find_opt function_env func_name with
       | Some func_decl  -> func_decl
       | None            -> unbound_fun func_name
@@ -121,7 +116,7 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
     ECall (func_name, typed_args, typed_resource), decl.func_return
 
 (* EField *)
-  | ast.EField (e, field_name) ->
+  | Ast.EField (e, field_name) ->
     let typed_e = expr delta gamma e in
     let field_type = match typed_e.expr_typ with
       | TCustomType custom_name ->
@@ -137,7 +132,7 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
     
     
 (* EBinOp *)
-  | ast.EBinOp (op, e1, e2) ->
+  | Ast.EBinOp (op, e1, e2) ->
     let te1 = expr delta gamma e1 in
     let te2 = expr delta gamma e2 in
     let result_typ = check_binop op te1.expr_typ te2.expr_typ in
@@ -152,11 +147,11 @@ let extract_holes prompt =
   in
   find_from 0
   
-let check_prompt_holes = function
+let check_prompt_holes (f : Ast.func_declaration) : unit =
 
 
-let check_declaration = function
-    | ast.DFunc f ->
+let check_declaration (decl : Ast.declaration) : declaration = match decl with
+    | Ast.DFunc f ->
       if Hashtbl.mem function_env f.func_name then
         duplicate_declaration f.func_name;
       check_prompt_holes f;
@@ -165,7 +160,7 @@ let check_declaration = function
         func_params        = f.func_params;
         func_return        = f.func_return;
         func_needsResource = f.func_needs_resource;
-        func_prompt        = f.func_prompt;
+        func_prompt        = typed_prompt;
         func_prompt_holes  = f.func_params;
         func_builtin       = f.func_builtin;
         func_location      = f.func_location;
@@ -173,7 +168,7 @@ let check_declaration = function
       Hashtbl.add function_env f.func_name typed_f;
       DFunc typed_f
 
-    | ast.DResource r ->
+    | Ast.DResource r ->
       if Hashtbl.mem resource_env r.resource_name then
         duplicate_declaration r.resource_name;
       let typed_r = {
@@ -187,7 +182,7 @@ let check_declaration = function
       Hashtbl.add resource_env r.resource_name typed_r;
       DResource typed_r 
 
-    | ast.DCustomType ct ->
+    | Ast.DCustomType ct ->
       if Hashtbl.mem custom_type_env ct.type_name then
         duplicate_declaration ct.type_name;
       let typed_ct = {
