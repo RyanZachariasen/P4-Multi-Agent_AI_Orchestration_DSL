@@ -57,6 +57,7 @@ rule next_tokens = parse
                     { next_tokens lexbuf }
   | "/*"            { comment lexbuf; next_tokens lexbuf }
   | "\"\"\""        { [TEXT (triple_string lexbuf)] }
+  | "$"             { [TEXT (triple_string lexbuf)] }
   | "->"            { [ARROW] }
   |','              { [COMMA] }
   |'.'              { [DOT] }
@@ -98,6 +99,7 @@ and comment = parse
 
 and triple_string = parse
   | "\"\"\""        { let s = Buffer.contents string_buffer in Buffer.reset string_buffer; s }
+  | "$"             { let s = Buffer.contents string_buffer in Buffer.reset string_buffer; s}
   | _ as c          { Buffer.add_char string_buffer c; triple_string lexbuf }
   | eof             { raise (Lexing_error "unterminated triple string") }
 
