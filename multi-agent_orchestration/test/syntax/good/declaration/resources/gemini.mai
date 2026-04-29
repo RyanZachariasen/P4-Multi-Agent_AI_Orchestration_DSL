@@ -1,5 +1,6 @@
-Resource agent1 = gemini(model="claude-sonnet")
-Resource agent2 = gemini(model="claude-sonnet", max_tokens=10000)
-Resource agent3 = gemini(model="claude-sonnet", max_tokens=10000, system_prompt="be good")
+Resource agent1 = gemini("claude-sonnet")
+Resource agent2 = gemini("claude-sonnet", max_tokens=10000)
+Resource agent3 = gemini("claude-sonnet", max_tokens=10000, system_prompt="be good")
 
 workflow:
+    print("hello")
