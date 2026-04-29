@@ -44,9 +44,10 @@ workflow:
 | WORKFLOW ; COLON ; NEWLINE; BEGIN; body = separated_list(NEWLINE, stmt); END;  
   { { workflow_body = body;
     workflow_location = {
-        file = $startpos.pos_fname;
-        line = $startpos.pos_lnum;
-        col = $endpos.pos_cnum }
+          file = $startpos.pos_fname;
+          line = $startpos.pos_lnum;
+          col  = $startpos.pos_cnum - $startpos.pos_bol;
+        };
     }
   }
 
@@ -54,7 +55,11 @@ expr:
 | node = expr_node
   {
     { expr_node = node;
-      expr_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum } 
+      expr_location = {
+          file = $startpos.pos_fname;
+          line = $startpos.pos_lnum;
+          col  = $startpos.pos_cnum - $startpos.pos_bol;
+        };
     }
   }
 
@@ -89,7 +94,11 @@ stmt:
 | node = stmt_node
   {
     { statement_node = node;
-      statement_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum } 
+      statement_location = {
+          file = $startpos.pos_fname;
+          line = $startpos.pos_lnum;
+          col  = $startpos.pos_cnum - $startpos.pos_bol;
+      }; 
     }
   } 
 
@@ -99,12 +108,20 @@ stmt_node:
 | WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { 
     SWriteFile ({
       expr_node= EConst (CFile file);
-      expr_location={file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
+      expr_location = {
+          file = $startpos.pos_fname;
+          line = $startpos.pos_lnum;
+          col  = $startpos.pos_cnum - $startpos.pos_bol;
+        };
     }, expr)}
 | READ_FILE ; LPAREN ; file = FILE ; RPAREN { 
     SReadFile {
       expr_node= EConst (CFile file);
-      expr_location={file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
+      expr_location = {
+          file = $startpos.pos_fname;
+          line = $startpos.pos_lnum;
+          col  = $startpos.pos_cnum - $startpos.pos_bol;
+      };
     } } 
 
 declaration:
@@ -116,7 +133,11 @@ declaration:
       resource_model = model;
       max_tokens = max_tokens;
       system_prompt = system_prompt;
-      resource_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum }
+      resource_location  = {
+          file = $startpos.pos_fname;
+          line = $startpos.pos_lnum;
+          col  = $startpos.pos_cnum - $startpos.pos_bol;
+      };
     }
   }
 | TYPE; ident = IDENT; ASSIGN; LBRACE;
@@ -129,7 +150,7 @@ declaration:
       type_location = {
         file = $startpos.pos_fname;
         line = $startpos.pos_lnum;
-        col = $startpos.pos_cnum;
+        col  = $startpos.pos_cnum - $startpos.pos_bol;
       };
     }
   }
@@ -150,7 +171,11 @@ declaration:
         func_needs_resource = true;
         func_prompt = prompt;
         func_builtin = false;
-        func_location = { file = $startpos.pos_fname; line = $startpos.pos_lnum; col = $endpos.pos_cnum };
+        func_location = {
+          file = $startpos.pos_fname;
+          line = $startpos.pos_lnum;
+          col  = $startpos.pos_cnum - $startpos.pos_bol;
+        };
       } in
       DFunc function_declaration }
 
