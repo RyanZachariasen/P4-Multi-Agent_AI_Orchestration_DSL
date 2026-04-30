@@ -22,7 +22,7 @@ let handle_parser_error (lexbuf: Lexing.lexbuf) =
     Printf.eprintf "Syntax error at %s:%d:%d\n" 
       pos.pos_fname pos.pos_lnum (pos.pos_cnum - pos.pos_bol);
     exit 1
-
+(*test*)
 let () =
     let filename = (if Array.length Sys.argv > 0 then handle_filename_given() else handle_no_filename_given()) in
     let file_channel = open_in filename in
