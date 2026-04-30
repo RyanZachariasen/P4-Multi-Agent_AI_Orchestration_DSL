@@ -1,7 +1,7 @@
-open typed_ast
+open Typed_ast
 
 (* Type til string*)
-let string_of_typ = function
+let string_of_typ (t : typ) : string = match t with
   | TText    -> "Text"
   | TInt     -> "Int"
   | TBool    -> "Bool"
@@ -9,8 +9,6 @@ let string_of_typ = function
   | TFile    -> "File"
   | TFloat   -> "Float"
   | TCustomType s -> s
-
-
 
 (* Error handling*)
 exception Type_error of location option * string
@@ -23,12 +21,11 @@ let unbound_resource      ?location r     = error ?location ("Unbound resource: 
 let unbound_field         ?location s f   = error ?location ("Unbound field: Type " ^ s ^ " has no field " ^ f)
 let resource_required     ?location f     = error ?location ("Resource required: Call to " ^ f ^ " requires a resource")
 let duplicate_declaration ?location f     = error ?location ("Duplicate declaration: " ^ f ^ " is already declared")
-
+let resource_not_needed   ?location f     = error ?location ("Resource not needed: " ^ f ^ " does not take a resource")
 let bad_arity ?location f expected got =
   error ?location ("Bad arity: function " ^ f ^ " expects " ^
               string_of_int expected ^ " arguments, got " ^
               string_of_int got)
-
 let type_mismatch ?location t1 t2 =
   error ?location ("Type mismatch: expected " ^ string_of_typ t2 ^
               ", got " ^ string_of_typ t1)
@@ -39,16 +36,11 @@ let resource_env: (name, resource_declaration) Hashtbl.t = Hashtbl.create 8
 let custom_type_env: (name, custom_type_declaration) Hashtbl.t = Hashtbl.create 8
 let variable_env: (name, typ) Hashtbl.t = Hashtbl.create 8
 
-let add_new_func (ident: Ast.name) (func: Ast.func_declaration) = 
-  if (Hashtbl.mem function_env ident) then
-    duplicate_declaration(ident)
-  else Hashtbl.add function_env ident func;
-
-let check_subtype = match t1, t2 with
+let check_subtype (t1 : typ) (t2 : typ) : bool = match t1, t2 with
 | TCode, TText -> true
 | t1, t2 -> t1 = t2
 
-let check_binop op type1 type2 = match op, type1, type2 with
+let check_binop (op : binop) (type1 : typ) (type2 : typ) : typ = match op, type1, type2 with
   | Concat, TText, TText -> TText
   | Concat, TCode, TText -> TText
   | Concat, TText, TCode -> TText
@@ -61,11 +53,11 @@ let check_binop op type1 type2 = match op, type1, type2 with
   | _, t1, t2    -> error ("Arithmetic requires numeric operands, got " ^
                      string_of_typ t1 ^ " and " ^ string_of_typ t2)
 
-let rec expr (delta : custom_type_env) (gamma : variable_env) untyped_expr =
+let rec expr (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name, typ) Hashtbl.t) (untyped_expr : Ast.expr) : expr =
   let typed_expr, typ = expr_node delta gamma untyped_expr.expr_node in
   {expr_node = typed_expr; expr_typ = typ}
 
-and expr_node (delta : custom_type_env) (gamma : variable_env) = function
+and expr_node (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name, typ) Hashtbl.t) (node : Ast.expr_node) : expr_node * typ = match node with
 (* EVar *)
   | EVar x ->
       let ty = match Hashtbl.find_opt gamma x with
@@ -92,7 +84,7 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
   in
   EConst c, ty
 (* ECall *)
-  | ast.ECall (func_name, args, resource_optional) ->
+  | Ast.ECall (func_name, args, resource_optional) ->
     let decl = match Hashtbl.find_opt function_env func_name with
       | Some func_decl  -> func_decl
       | None            -> unbound_fun func_name
@@ -106,7 +98,8 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
   let typed_args = List.map2
     (fun (_, param_typ) arg ->
       let targ = expr delta gamma arg in
-      check_subtype targ.expr_typ param_typ;
+      if not (check_subtype targ.expr_typ param_typ) then
+        type_mismatch targ.expr_typ param_typ;
       targ)
     decl.func_params args
   in
@@ -123,7 +116,7 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
     ECall (func_name, typed_args, typed_resource), decl.func_return
 
 (* EField *)
-  | ast.EField (e, field_name) ->
+  | Ast.EField (e, field_name) ->
     let typed_e = expr delta gamma e in
     let field_type = match typed_e.expr_typ with
       | TCustomType custom_name ->
@@ -139,18 +132,102 @@ and expr_node (delta : custom_type_env) (gamma : variable_env) = function
     
     
 (* EBinOp *)
-  | ast.EBinOp (op, e1, e2) ->
+  | Ast.EBinOp (op, e1, e2) ->
     let te1 = expr delta gamma e1 in
     let te2 = expr delta gamma e2 in
     let result_typ = check_binop op te1.expr_typ te2.expr_typ in
     EBinOp (op, te1, te2), result_typ
 
+
+
+let statement (delta : custom_type_env) (gamma : variable_env) = function
+  | Ast.SLet (x, e) ->
+    let typed_e = expr delta gamma e in
+    Hashtbl.replace gamma x typed_e.expr_typ;
+    SLet (x, typed_e.expr_typ, typed_e)
+
+  | Ast.SPrint e ->
+    let typed_e = expr delta gamma e in
+    SPrint typed_e
+
+  | Ast.SWriteFile (path_expr, content_expr) ->
+    let typed_path = expr delta gamma path_expr in
+    let typed_content = expr delta gamma content_expr in
+    if not (check_subtype typed_path.expr_typ TFile) then
+      type_mismatch typed_path.expr_typ TFile;
+    if not (check_subtype typed_content.expr_typ TText) then
+      type_mismatch typed_content.expr_typ TText;
+    SWriteFile (typed_path, typed_content)
+
+  | Ast.SReadFile path_expr ->
+    let typed_path = expr delta gamma path_expr in
+    if not (check_subtype typed_path.expr_typ TFile) then
+      type_mismatch typed_path.expr_typ TFile;
+    SReadFile typed_path
+
+let workflow (delta : custom_type_env) (gamma : variable_env) (wf : Ast.workflow) =
+  let typed_body = List.map (statement delta gamma) wf.workflow_body in
+  {
+    workflow_name = "workflow";
+    workflow_params = [];
+    workflow_body = typed_body;
+    workflow_loc = wf.workflow_location;
+  }
+
+let extract_holes prompt =
+  let regex = Str.regexp "{\\([a-zA-Z_][a-zA-Z0-9_]*\\)}" in
+  let rec find_hole pos =
+    match Str.search_forward regex prompt pos with
+    | exception Not_found -> []
+    | _ -> Str.matched_group 1 prompt :: find_from (Str.match_end ())
+  in
+  find_from 0
   
+let check_prompt_holes (f : Ast.func_declaration) : unit =
 
 
+let check_declaration (decl : Ast.declaration) : declaration = match decl with
+    | Ast.DFunc f ->
+      if Hashtbl.mem function_env f.func_name then
+        duplicate_declaration f.func_name;
+      check_prompt_holes f;
+      let typed_f = {
+        func_name          = f.func_name;
+        func_params        = f.func_params;
+        func_return        = f.func_return;
+        func_needsResource = f.func_needs_resource;
+        func_prompt        = typed_prompt;
+        func_prompt_holes  = f.func_params;
+        func_builtin       = f.func_builtin;
+        func_location      = f.func_location;
+      } in
+      Hashtbl.add function_env f.func_name typed_f;
+      DFunc typed_f
 
+    | Ast.DResource r ->
+      if Hashtbl.mem resource_env r.resource_name then
+        duplicate_declaration r.resource_name;
+      let typed_r = {
+        resource_name     = r.resource_name;
+        resource_provider = r.resource_provider;
+        resource_model    = r.resource_model;
+        max_tokens        = r.max_tokens;
+        system_prompt     = r.system_prompt;
+        resource_location = r.resource_location;
+      } in
+      Hashtbl.add resource_env r.resource_name typed_r;
+      DResource typed_r 
 
+    | Ast.DCustomType ct ->
+      if Hashtbl.mem custom_type_env ct.type_name then
+        duplicate_declaration ct.type_name;
+      let typed_ct = {
+        type_name     = ct.type_name;
+        type_fields   = ct.type_fields;
+        type_location = ct.type_location;
+      } in
+      Hashtbl.add custom_type_env ct.type_name typed_ct;
+      DCustomType typed_ct
 
 
   
-
