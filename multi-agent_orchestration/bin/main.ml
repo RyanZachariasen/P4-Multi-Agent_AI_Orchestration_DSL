@@ -35,7 +35,7 @@ let () =
     let _ast = Parser.program Lexer.next_token lexbuf in
     close_in file_channel;
     if !parse_only then exit 0;
-    (* TODO: call Typing.program here *)
+    (*let _typed_ast = Typing.program _ast in*)
     if !type_only then exit 0;
   with
   | Lexer.Lexing_error error_message ->
