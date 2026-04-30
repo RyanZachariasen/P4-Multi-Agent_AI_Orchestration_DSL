@@ -12,8 +12,6 @@ let parse_file (filename : string) (lexbuf) =
       let _ast = Parser.program Lexer.next_token lexbuf in
       Printf.printf "Successfully parsed: %s\n" filename;;
 
-
-(*test*)
 let handle_lexer_error (error_message : string) (lexbuf: Lexing.lexbuf) = 
   let pos = lexbuf.lex_curr_p in
   Printf.eprintf "Lexical error at %s:%d:%d: %s\n"
