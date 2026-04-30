@@ -138,6 +138,42 @@ and expr_node (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name
     let result_typ = check_binop op te1.expr_typ te2.expr_typ in
     EBinOp (op, te1, te2), result_typ
 
+
+
+let statement (delta : custom_type_env) (gamma : variable_env) = function
+  | Ast.SLet (x, e) ->
+    let typed_e = expr delta gamma e in
+    Hashtbl.replace gamma x typed_e.expr_typ;
+    SLet (x, typed_e.expr_typ, typed_e)
+
+  | Ast.SPrint e ->
+    let typed_e = expr delta gamma e in
+    SPrint typed_e
+
+  | Ast.SWriteFile (path_expr, content_expr) ->
+    let typed_path = expr delta gamma path_expr in
+    let typed_content = expr delta gamma content_expr in
+    if not (check_subtype typed_path.expr_typ TFile) then
+      type_mismatch typed_path.expr_typ TFile;
+    if not (check_subtype typed_content.expr_typ TText) then
+      type_mismatch typed_content.expr_typ TText;
+    SWriteFile (typed_path, typed_content)
+
+  | Ast.SReadFile path_expr ->
+    let typed_path = expr delta gamma path_expr in
+    if not (check_subtype typed_path.expr_typ TFile) then
+      type_mismatch typed_path.expr_typ TFile;
+    SReadFile typed_path
+
+let workflow (delta : custom_type_env) (gamma : variable_env) (wf : Ast.workflow) =
+  let typed_body = List.map (statement delta gamma) wf.workflow_body in
+  {
+    workflow_name = "workflow";
+    workflow_params = [];
+    workflow_body = typed_body;
+    workflow_loc = wf.workflow_location;
+  }
+
 let extract_holes prompt =
   let regex = Str.regexp "{\\([a-zA-Z_][a-zA-Z0-9_]*\\)}" in
   let rec find_hole pos =
@@ -192,3 +228,6 @@ let check_declaration (decl : Ast.declaration) : declaration = match decl with
       } in
       Hashtbl.add custom_type_env ct.type_name typed_ct;
       DCustomType typed_ct
+
+
+      
