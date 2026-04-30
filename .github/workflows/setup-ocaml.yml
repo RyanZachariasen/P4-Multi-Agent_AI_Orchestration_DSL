@@ -38,6 +38,26 @@ jobs:
       - name: Run tests
         run: opam exec -- dune runtest
 
+  dsl-tests:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout tree
+        uses: actions/checkout@v4
+
+      - name: Set-up OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5
+          dune-cache: true
+
+      - name: Install dependencies
+        run: opam install . --deps-only --with-test
+
+      - name: Build binary
+        run: opam exec -- dune build
+
       - name: Run DSL syntax + typing tests
         run: |
           chmod +x test/run_tests.sh
