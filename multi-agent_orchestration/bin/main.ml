@@ -13,7 +13,7 @@ let parse_file (filename : string) (lexbuf) =
       Printf.printf "Successfully parsed: %s\n" filename;;
 
 
-
+(*test*)
 let handle_lexer_error (error_message : string) (lexbuf: Lexing.lexbuf) = 
   let pos = lexbuf.lex_curr_p in
   Printf.eprintf "Lexical error at %s:%d:%d: %s\n"
