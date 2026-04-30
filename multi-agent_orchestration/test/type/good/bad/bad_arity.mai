@@ -1,0 +1,5 @@
+func code(input: Code) -> Code:
+    "code something"
+
+
+code()

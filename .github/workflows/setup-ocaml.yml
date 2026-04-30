@@ -38,6 +38,11 @@ jobs:
       - name: Run tests
         run: opam exec -- dune runtest
 
+      - name: Run DSL syntax + typing tests
+        run: |
+          chmod +x test/run_tests.sh
+          bash test/run_tests.sh _build/default/bin/multi-agent_orchestration
+
   lint-opam:
     runs-on: ubuntu-latest
     steps:

@@ -1,5 +1,6 @@
-Resource agent1 = openai(model="claude-sonnet")
-Resource agent2 = openai(model="claude-sonnet", max_tokens=10000)
-Resource agent3 = openai(model="claude-sonnet", max_tokens=10000, system_prompt="be good")
+Resource agent1 = openai("claude-sonnet")
+Resource agent2 = openai("claude-sonnet", max_tokens=10000)
+Resource agent3 = openai("claude-sonnet", max_tokens=10000, system_prompt="be good")
 
 workflow:
+    print("hello")
