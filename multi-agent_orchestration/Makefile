@@ -25,7 +25,11 @@ utop:
 # Setup command for new developers
 setup:
 	opam install . --deps-only --with-test
-	opam install menhir  # For the parser (Week 5)
+	opam install menhir
+
+format:
+	ocamlformat --enable-outside-detected-project -i bin/*.ml
+	ocamlformat --enable-outside-detected-project -i lib/*.ml
 
 clean:
 	dune clean
