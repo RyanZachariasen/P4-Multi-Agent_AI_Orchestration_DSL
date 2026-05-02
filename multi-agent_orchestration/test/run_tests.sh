@@ -7,6 +7,7 @@ echo "Running syntax tests..."
 find test/syntax/good -name "*.mai" | while read -r f; do
     make run ARGS="$f --parse-only" > ./test_log 2>&1 || {
         echo "FAIL: $f should parse"
+        cat test_log
         exit 1
     }
 done
@@ -15,6 +16,7 @@ done
 find syntax/bad -name "*.mai" | while read -r f; do
     make run ARGS="$f --parse-only" > ./test_log 2>&1 && {
         echo "FAIL: $f should fail"
+        cat test_log
         exit 1
     }
 done
@@ -26,6 +28,7 @@ echo "Running type tests..."
 find type/good -name "*.mai" | while read -r f; do
     make run ARGS="$f --type-only" > ./test_log 2>&1 || {
         echo "FAIL: $f should pass"
+        cat test_log
         exit 1
     }
 done
@@ -34,6 +37,7 @@ done
 find type/bad -name "*.mai" | while read -r f; do
     make run ARGS="$f --type-only" > ./test_log 2>&1 && {
         echo "FAIL: $f should fail"
+        cat test_log
         exit 1
     }
 done
