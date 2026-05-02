@@ -1,13 +1,11 @@
 #!/bin/bash
 set -e
 
-TOOL=$1
-
 echo "Running syntax tests..."
 
 # Good syntax tests
-find syntax/good -name "*.mai" | while read -r f; do
-    $TOOL --parse-only "$f" > /dev/null 2>&1 || {
+find test/syntax/good -name "*.mai" | while read -r f; do
+    make run ARGS="$f --parse-only" > ./test_log 2>&1 || {
         echo "FAIL: $f should parse"
         exit 1
     }
@@ -15,7 +13,7 @@ done
 
 # Bad syntax tests
 find syntax/bad -name "*.mai" | while read -r f; do
-    $TOOL --parse-only "$f" > /dev/null 2>&1 && {
+    make run ARGS="$f --parse-only" > /dev/null 2>&1 && {
         echo "FAIL: $f should fail"
         exit 1
     }

@@ -35,9 +35,6 @@ jobs:
       - name: Build
         run: opam exec -- dune build
 
-      - name: Run tests
-        run: opam exec -- dune runtest
-
   dsl-tests:
     runs-on: ubuntu-latest
     needs: build
@@ -55,13 +52,8 @@ jobs:
       - name: Install dependencies
         run: opam install . --deps-only --with-test
 
-      - name: Build binary
-        run: opam exec -- dune build
-
-      - name: Run DSL syntax + typing tests
-        run: |
-          chmod +x test/run_tests.sh
-          bash test/run_tests.sh _build/default/bin/multi-agent_orchestration
+      - name: test
+        run: make test
 
   lint-opam:
     runs-on: ubuntu-latest

@@ -16,3 +16,5 @@ _opam/
 .idea/
 *.swp
 .env
+
+test_log

@@ -1,7 +1,6 @@
-Resource coding_agent = Anthropic("claude-sonnet")
+Resource coding_agent = anthropic("claude-sonnet")
 
 func code(input: Code) -> Code:
-    on resource
     """ Code this program: {input}"""
 
 workflow:
