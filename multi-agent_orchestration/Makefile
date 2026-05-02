@@ -16,7 +16,7 @@ run:
 
 # P4 Requirement: Testing (Unit and Integration)
 test:
-	./test/run_tests.sh
+	opam exec -- ./test/run_tests.sh
 
 # Interactive REPL - Great for "Problem Analysis" phase
 utop:
