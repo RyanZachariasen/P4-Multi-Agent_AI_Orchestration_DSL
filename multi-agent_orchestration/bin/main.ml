@@ -24,6 +24,7 @@ let handle_parser_error (lexbuf : Lexing.lexbuf) =
 let flags = [ "--parse-only"; "--list-only" ]
 
 let get_file_name (args : string array) : string =
+
   if Array.length args > 1 then args.(1)
   else raise (No_file_error "No file given as argument")
 
@@ -35,6 +36,7 @@ let get_compiler_mode (args : string array) : string option =
     else raise (Invalid_flag_error ("This flag is not valid: ", args.(2)))
   else None
 
+
 let () =
   let filename = get_file_name Sys.argv in
   let compiler_mode = get_compiler_mode Sys.argv in
@@ -45,6 +47,7 @@ let () =
 
   try
     parse_file filename lexbuf;
+
 
     if compiler_mode = Some "--parse-only" then (
       print_endline "Exiting in parse only mode";
