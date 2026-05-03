@@ -13,6 +13,7 @@ let handle_lexer_error (error_message : string) (lexbuf : Lexing.lexbuf) =
   Printf.eprintf "Lexical error at %s:%d:%d: %s\n" pos.pos_fname pos.pos_lnum
     (pos.pos_cnum - pos.pos_bol)
     error_message
+  exit 1
 
 let handle_parser_error (lexbuf : Lexing.lexbuf) =
   let pos = lexbuf.lex_curr_p in
@@ -23,16 +24,16 @@ let handle_parser_error (lexbuf : Lexing.lexbuf) =
 let flags = [ "--parse-only"; "--list-only" ]
 
 let get_file_name (args : string array) : string =
-  if Array.length args > 1 && not (List.mem args.(1) flags) then args.(1)
+  if Array.length args > 1 then args.(1)
   else raise (No_file_error "No file given as argument")
 
-let get_compiler_mode (args : string array) : string =
+let get_compiler_mode (args : string array) : string option =
   if Array.length args > 2 then
     if List.mem args.(2) flags then (
       Printf.printf "Running compiler mode: %s\n" args.(2);
       args.(2))
     else raise (Invalid_flag_error ("This flag is not valid: ", args.(2)))
-  else ""
+  else None
 
 let () =
   let filename = get_file_name Sys.argv in

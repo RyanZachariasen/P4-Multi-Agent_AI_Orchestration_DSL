@@ -1,4 +1,4 @@
-open Typed_ast
+(*open Typed_ast
 
 (* Type til string*)
 let string_of_typ (t : typ) : string = match t with
@@ -228,6 +228,6 @@ let check_declaration (decl : Ast.declaration) : declaration = match decl with
       } in
       Hashtbl.add custom_type_env ct.type_name typed_ct;
       DCustomType typed_ct
-
+*)
 
   
