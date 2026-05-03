@@ -1,5 +1,4 @@
 func code(input: Code) -> Code:
     "code something"
-
-
-code()
+workflow:
+    code("this is code")

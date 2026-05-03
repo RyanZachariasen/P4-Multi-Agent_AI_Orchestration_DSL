@@ -4,40 +4,40 @@ set -e
 echo "Running syntax tests..."
 
 # Good syntax tests
-find test/syntax/good -name "*.mai" | while read -r f; do
-    make run ARGS="$f --parse-only" > ./test_log 2>&1 || {
+while read -r f; do
+    if ! make run ARGS="$f --parse-only" > ./test_log 2>&1; then
         echo "FAIL: $f should parse"
         cat test_log
         exit 1
-    }
-done
+    fi
+done < <(find test/syntax/good -name "*.mai")
 
 # Bad syntax tests
-find syntax/bad -name "*.mai" | while read -r f; do
-    make run ARGS="$f --parse-only" > ./test_log 2>&1 && {
+while read -r f; do
+    if make run ARGS="$f --parse-only" > ./test_log 2>&1; then
         echo "FAIL: $f should fail"
         cat test_log
         exit 1
-    }
-done
+    fi
+done < <(find test/syntax/bad -name "*.mai")
 
 echo "All syntax tests passed"
 echo "Running type tests..."
 
 # Good type tests
-find type/good -name "*.mai" | while read -r f; do
-    make run ARGS="$f --type-only" > ./test_log 2>&1 || {
-        echo "FAIL: $f should pass"
+while read -r f; do
+    if ! make run ARGS="$f --type-only" > ./test_log 2>&1; then
+        echo "FAIL: $f should parse"
         cat test_log
         exit 1
-    }
-done
+    fi
+done < <(find test/type/good -name "*.mai")
 
 # Bad type tests
-find type/bad -name "*.mai" | while read -r f; do
-    make run ARGS="$f --type-only" > ./test_log 2>&1 && {
-        echo "FAIL: $f should fail"
+while read -r f; do
+    if make run ARGS="$f --type-only" > ./test_log 2>&1; then
+        echo "FAIL: $f should parse"
         cat test_log
         exit 1
-    }
-done
+    fi
+done < <(find test/type/bad -name "*.mai")
