@@ -1,0 +1,8 @@
+Resource coding_agent = anthropic("claude-sonnet")
+
+func code(input: int) -> Code:
+    on Resource
+    """ Code this program: $input$"""
+
+workflow:
+    x = code("javascript tic-tac-toe game") on coding_agent
