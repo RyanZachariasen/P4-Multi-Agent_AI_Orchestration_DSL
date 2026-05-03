@@ -19,7 +19,7 @@
         
         "Text", TTEXT; "File", TFILE; "Code", TCODE;
 
-        "True", BOOL(true); "False", BOOL(false);
+        "True", BOOL(true); "False", BOOL(false); "on", ON;
         ];
    fun s -> try Hashtbl.find h s with Not_found -> IDENT s
 (*----------------------------------------------*)

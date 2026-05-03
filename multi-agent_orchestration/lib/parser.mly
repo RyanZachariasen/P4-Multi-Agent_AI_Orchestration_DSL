@@ -23,7 +23,7 @@
 
 %token RESOURCE ANTHROPIC OPENAI GEMINI GROK
 
-%token FUNC ARROW WORKFLOW TYPE
+%token FUNC ARROW WORKFLOW TYPE ON
 
 %token NEWLINE
 
@@ -36,12 +36,12 @@
 %%
 
 program:
-| NEWLINE? decls = nonempty_list(declaration); NEWLINE?;  wf = workflow; NEWLINE?; EOF;
+| NEWLINE? decls = list(declaration); NEWLINE?;  wf = workflow; NEWLINE?; EOF;
       { { prog_decls    = decls;
           prog_workflow = wf } }
 
 workflow:
-| WORKFLOW ; COLON ; NEWLINE; BEGIN; body = separated_list(NEWLINE, stmt); END;  
+| WORKFLOW ; COLON ; NEWLINE; BEGIN; body = list(stmt); END;  
   { { workflow_body = body;
     workflow_location = {
           file = $startpos.pos_fname;
@@ -69,7 +69,7 @@ expr_node:
 | ident = IDENT; LPAREN; args = separated_list(COMMA, expr); RPAREN
     { ECall (ident, List.map (fun e -> e) args, None) }
 
-| ident = IDENT; LPAREN; args = separated_list(COMMA, expr); RPAREN; ON_RESOURCE; r = IDENT
+| ident = IDENT; LPAREN; args = separated_list(COMMA, expr); RPAREN; ON; r = IDENT
     { ECall (ident, List.map (fun e -> e) args, Some r) }
 | expr_1 = expr; DOT; ident = IDENT { EField (expr_1, ident) }
 | expr_1 = expr; operand = operand; expr_2 = expr { EBinOp (operand, expr_1, expr_2)}
@@ -91,7 +91,7 @@ constant:
 ;
 
 stmt:
-| node = stmt_node
+| node = stmt_node NEWLINE?;
   {
     { statement_node = node;
       statement_location = {
@@ -125,7 +125,7 @@ stmt_node:
     } } 
 
 declaration:
-| RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN  { 
+| RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN ; NEWLINE { 
     let (max_tokens, system_prompt) = optionals in
     DResource {
       resource_name = ident;
@@ -160,6 +160,7 @@ declaration:
   func_params = separated_list(COMMA, func_parameter); RPAREN;
   ARROW; return_type = typ; COLON; NEWLINE;
   BEGIN;
+  ON ; RESOURCE ; NEWLINE ;
   prompt = list(prompt_part); 
   NEWLINE;
   END; 
