@@ -165,26 +165,14 @@ let statement (delta : custom_type_env) (gamma : variable_env) = function
       type_mismatch typed_path.expr_typ TFile;
     SReadFile typed_path
 
-let workflow (delta : custom_type_env) (gamma : variable_env) (wf : Ast.workflow) =
-  let typed_body = List.map (statement delta gamma) wf.workflow_body in
-  {
-    workflow_name = "workflow";
-    workflow_params = [];
-    workflow_body = typed_body;
-    workflow_loc = wf.workflow_location;
-  }
-
-let extract_holes prompt =
-  let regex = Str.regexp "{\\([a-zA-Z_][a-zA-Z0-9_]*\\)}" in
-  let rec find_hole pos =
-    match Str.search_forward regex prompt pos with
-    | exception Not_found -> []
-    | _ -> Str.matched_group 1 prompt :: find_from (Str.match_end ())
-  in
-  find_from 0
   
-let check_prompt_holes (f : Ast.func_declaration) : unit =
-
+let check_prompt_holes delta (f : Ast.func_declaration) : prompt_part list =
+  let gamma = Hashtbl.create (List.length f.func_params) in
+  List.iter (fun (p, t) -> Hashtbl.add gamma p t) f.func_params;
+  List.map (function
+    | Ast.PromptText s -> PromptText s
+    | Ast.PromptHole e -> PromptHole (expr delta gamma e))
+    f.func_prompt
 
 let check_declaration (decl : Ast.declaration) : declaration = match decl with
     | Ast.DFunc f ->
@@ -196,8 +184,7 @@ let check_declaration (decl : Ast.declaration) : declaration = match decl with
         func_params        = f.func_params;
         func_return        = f.func_return;
         func_needsResource = f.func_needs_resource;
-        func_prompt        = typed_prompt;
-        func_prompt_holes  = f.func_params;
+        func_prompt        = f.func_prompt;
         func_builtin       = f.func_builtin;
         func_location      = f.func_location;
       } in
@@ -229,5 +216,12 @@ let check_declaration (decl : Ast.declaration) : declaration = match decl with
       Hashtbl.add custom_type_env ct.type_name typed_ct;
       DCustomType typed_ct
 
+let workflow (delta : custom_type_env) (gamma : variable_env) (wf : Ast.workflow) =
+  let typed_body = List.map (statement delta gamma) wf.workflow_body in
+  {
+    workflow_name = "workflow";
+    workflow_params = [];
+    workflow_body = typed_body;
+    workflow_loc = wf.workflow_location;
+  }
 
-  
