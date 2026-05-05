@@ -178,7 +178,7 @@ let check_declaration (decl : Ast.declaration) : declaration = match decl with
     | Ast.DFunc f ->
       if Hashtbl.mem function_env f.func_name then
         duplicate_declaration f.func_name;
-      check_prompt_holes f;
+      let typed_prompt = check_prompt_holes custom_type_env f in
       let typed_f = {
         func_name          = f.func_name;
         func_params        = f.func_params;
@@ -225,3 +225,9 @@ let workflow (delta : custom_type_env) (gamma : variable_env) (wf : Ast.workflow
     workflow_loc = wf.workflow_location;
   }
 
+let check_program (p : Ast.program) : program =
+  let typed_decls = List.map check_declaration p.prog_decls in
+  let typed_wf = workflow custom_type_env variable_env p.prog_workflow in
+
+  { prog_decls    = typed_decls;
+    prog_workflow = typed_wf }
