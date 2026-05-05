@@ -40,33 +40,15 @@ let rec expr delta gamma (untyped_expr : Ast.expr) : expr =
   { expr_node = typed_expr; 
     expr_typ = typ }
 
-and check_field (e: Ast.expr) (field_name: name) delta gamma (location: Ast.location) : expr_node * typ= 
-  let custom_type = expr delta gamma e in
-  let field_type = match custom_type.expr_node with
-  | EConst CCustomType name ->
-      let declaration = Hashtbl.find custom_type_env name in
-      (match List.assoc_opt field_name declaration.type_fields with
-        | Some typ -> typ
-        | None   -> unbound_field location name field_name)
-  | _ -> error location "error accessing field"
-  in
 
-  EField (custom_type, field_name, field_type), field_type
 and check_expr_node delta gamma (node : Ast.expr_node) (location: Ast.location) : expr_node * typ = 
   match node with
   | Ast.EVar x -> check_variable x gamma location
   | Ast.EConst c -> check_constant c delta location
   | Ast.ECall (func_name, args, resource_optional) -> check_func_call func_name args resource_optional delta gamma location
   | Ast.EField (e, field_name) -> check_field e field_name delta gamma location
+  | Ast.EBinOp (opperand, e1, e2) -> check_binop opperand e1 e2 delta gamma location
     
-    
-(* EBinOp *)
-  | Ast.EBinOp (op, e1, e2) ->
-    let te1 = expr delta gamma e1 in
-    let te2 = expr delta gamma e2 in
-    let result_typ = check_binop op te1.expr_typ te2.expr_typ in
-    EBinOp (op, te1, te2), result_typ
-
 and check_constant (const: Ast.constant) delta (location: Ast.location) : expr_node * typ = 
   let const, typ = match const with
       | Ast.CText  text           -> CText text, TText
@@ -81,13 +63,26 @@ and check_constant (const: Ast.constant) delta (location: Ast.location) : expr_n
           else unbound_type location name
     in
     EConst const, typ
+
 and check_variable (x: name) (gamma : (name, typ) Hashtbl.t) (location: Ast.location) : expr_node * typ =
   let ty = match Hashtbl.find_opt gamma x with
       | Some t -> t
-      | None   -> unbound_var location x
+      | None -> unbound_var location x
     in
     EVar x, ty
 
+and check_field (e: Ast.expr) (field_name: name) delta gamma (location: Ast.location) : expr_node * typ= 
+  let custom_type = expr delta gamma e in
+  let field_type = match custom_type.expr_node with
+  | EConst CCustomType name ->
+      let declaration = Hashtbl.find custom_type_env name in
+      (match List.assoc_opt field_name declaration.type_fields with
+        | Some typ -> typ
+        | None   -> unbound_field location name field_name)
+  | _ -> error location "error accessing field"
+  in
+
+  EField (custom_type, field_name, field_type), field_type
 and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_optional: name option) delta gamma (location: Ast.location) =
   let decl = match Hashtbl.find_opt function_env func_name with
     | Some func_decl  -> func_decl
@@ -120,7 +115,20 @@ and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_option
     in
     ECall (func_name, typed_args, resource_optional), decl.func_return
 
-and check_binop (op : binop) (type1 : typ) (type2 : typ) (location: Ast.location) : typ = match op, type1, type2 with
+and check_binop (opperand : Ast.binop) (expr_1 : Ast.expr) (expr_2 : Ast.expr) delta gamma (location: Ast.location) : expr_node * typ = 
+    let typed_expr_1 = expr delta gamma expr_1 in
+    let typed_expr_2 = expr delta gamma expr_2 in
+
+    let t_opperand = match opperand with
+    | Ast.Add -> Add
+    | Ast.Mul -> Mul
+    | Ast.Div -> Div
+    | Ast.Sub -> Sub
+    | Ast.Concat -> Concat
+    in
+
+  let result_typ = 
+  match opperand, typed_expr_1.expr_typ, typed_expr_1.expr_typ with
   | Concat, TText, TText -> TText
   | Concat, TCode, TText -> TText
   | Concat, TText, TCode -> TText
@@ -131,7 +139,9 @@ and check_binop (op : binop) (type1 : typ) (type2 : typ) (location: Ast.location
   | _, TInt,   TFloat -> TFloat
   | Concat, _, _ -> error location "Concat requires Text operands"
   | _, typ1, typ2    -> error location ("Arithmetic requires numeric operands, got " ^
-                     string_of_typ typ1 ^ " and " ^ string_of_typ typ2)
+                     string_of_typ typ1 ^ " and " ^ string_of_typ typ2) in
+    EBinOp (t_opperand, typed_expr_1, typed_expr_2), result_typ
+  
 
 and statement (delta) (gamma) (location: Ast.location)= function
 
