@@ -33,7 +33,7 @@ type expr = {
 and expr_node =
   | EVar   of name
   | EConst of constant
-  | ECall  of name * expr list * resource_declaration option
+  | ECall  of name * expr list * name option
   | EField of expr * name * typ
   | EBinOp of binop * expr * expr
 

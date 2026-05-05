@@ -53,9 +53,22 @@ let check_binop (op : binop) (type1 : typ) (type2 : typ) : typ = match op, type1
   | _, t1, t2    -> error ("Arithmetic requires numeric operands, got " ^
                      string_of_typ t1 ^ " and " ^ string_of_typ t2)
 
+
+
+
+                     
 let rec expr (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name, typ) Hashtbl.t) (untyped_expr : Ast.expr) : expr =
   let typed_expr, typ = expr_node delta gamma untyped_expr.expr_node in
-  {expr_node = typed_expr; expr_typ = typ}
+  { expr_node = typed_expr;
+    expr_typ = typ }
+
+
+
+
+
+
+
+
 
 and expr_node (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name, typ) Hashtbl.t) (node : Ast.expr_node) : expr_node * typ = match node with
 (* EVar *)
@@ -225,9 +238,9 @@ let workflow (delta : custom_type_env) (gamma : variable_env) (wf : Ast.workflow
     workflow_loc = wf.workflow_location;
   }
 
-let check_program (p : Ast.program) : program =
-  let typed_decls = List.map check_declaration p.prog_decls in
-  let typed_wf = workflow custom_type_env variable_env p.prog_workflow in
+let check_program (program : Ast.program) : program =
+  let typed_decls = List.map check_declaration program.prog_decls in
+  let typed_wf = workflow custom_type_env variable_env program.prog_workflow in
 
   { prog_decls    = typed_decls;
     prog_workflow = typed_wf }
