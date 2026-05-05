@@ -70,4 +70,4 @@ let () =
   with
   | Lexer.Lexing_error error_message -> handle_lexer_error error_message lexbuf
   | Parser.Error -> handle_parser_error lexbuf
-  | Typing.Type_error location message -> Printf.printf "Typing error occured at"
+  | Typing.Type_error error_message -> print_endline error_message
