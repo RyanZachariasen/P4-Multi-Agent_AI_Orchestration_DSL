@@ -15,7 +15,7 @@ exception Type_error of Ast.location * string
 let error location msg = raise (Type_error (location, msg))
 
 let unbound_var location x = error location ("Unbound variable: " ^ x)
-let unbound_fun location func = error location ("Unbound function: " ^ func)
+let unbound_func location func = error location ("Unbound function: " ^ func)
 let unbound_type location typ = error location ("Unbound type: " ^ typ)
 let unbound_resource location resource = error location ("Unbound resource: " ^ resource)
 let unbound_field location typ field = error location ("Unbound field: Type " ^ typ ^ " has no field " ^ field)
@@ -35,61 +35,22 @@ let check_subtype (t1 : typ) (t2 : typ) : bool = match t1, t2 with
 | TCode, TText -> true
 | t1, t2 -> t1 = t2
 
+let rec expr delta gamma (untyped_expr : Ast.expr) : expr =
+  let typed_expr, typ = check_expr_node delta gamma untyped_expr.expr_node untyped_expr.expr_location in
+  { expr_node = typed_expr; 
+    expr_typ = typ }
 
-let rec expr (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name, typ) Hashtbl.t) (untyped_expr : Ast.expr) : expr =
-  let typed_expr, typ = expr_node delta gamma untyped_expr.expr_node in
-  {expr_node = typed_expr; expr_typ = typ}
-
-and check_binop (op : binop) (type1 : typ) (type2 : typ) (location: Ast.location) : typ = match op, type1, type2 with
-  | Concat, TText, TText -> TText
-  | Concat, TCode, TText -> TText
-  | Concat, TText, TCode -> TText
-  | Concat, TCode, TCode -> TText
-  | _, TInt,   TInt   -> TInt
-  | _, TFloat, TFloat -> TFloat
-  | _, TFloat, TInt   -> TFloat
-  | _, TInt,   TFloat -> TFloat
-  | Concat, _, _ -> error location "Concat requires Text operands"
-  | _, typ1, typ2    -> error location ("Arithmetic requires numeric operands, got " ^
-                     string_of_typ typ1 ^ " and " ^ string_of_typ typ2)
-
-and expr_node (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name, typ) Hashtbl.t) (node : Ast.expr_node) (location: Ast.location) : expr_node * typ = match node with
-(* EVar *)
-  | EVar x ->
-      let ty = match Hashtbl.find_opt gamma x with
-        | Some t -> t
-        | None   -> unbound_var location x
-      in
-      EVar x, ty
-
-(* EConst *)
-| EConst c ->
-  let ty = match c with
-    | CText  _           -> TText
-    | CInt   _           -> TInt
-    | CFloat _           -> TFloat
-    | CBool  _           -> TBool
-    | CCode  _           -> TCode
-    | CFile  _           -> TFile
-    | CCustomType name   ->
-        let _ = match Hashtbl.find_opt delta name with
-          | Some d -> d
-          | None   -> unbound_type location name
-        in
-        TCustomType name
+and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_optional: name option) delta gamma (location: Ast.location) =
+  let decl = match Hashtbl.find_opt function_env func_name with
+    | Some func_decl  -> func_decl
+    | None -> unbound_func location func_name
   in
-  EConst c, ty
-(* ECall *)
-  | Ast.ECall (func_name, args, resource_optional) ->
-    let decl = match Hashtbl.find_opt function_env func_name with
-      | Some func_decl  -> func_decl
-      | None            -> unbound_fun location func_name
-  in
-      (* Tjekker for arity*)
+  (* Tjekker for arity*)
   let expected_arguments = List.length decl.func_params in
   let receive_arguments = List.length args in
-  if expected_arguments <> receive_arguments 
-  then bad_arity location func_name expected_arguments receive_arguments;
+  if expected_arguments <> receive_arguments then
+     bad_arity location func_name expected_arguments receive_arguments;
+
   (* Tjekker func args*)
   let typed_args = List.map2
     (fun (_, param_typ) arg ->
@@ -99,8 +60,8 @@ and expr_node (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name
       targ)
     decl.func_params args
   in
-      (* Tjekker resource*)
-  let typed_resource = match decl.func_needsResource, resource_optional with
+  (* Tjekker resource*)
+  let typed_resource = match decl.func_needs_resource, resource_optional with
     | true, None    -> resource_required location func_name
     | false, Some _ -> resource_not_needed location func_name
     | false, None   -> None
@@ -111,7 +72,11 @@ and expr_node (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name
     in
     ECall (func_name, typed_args, typed_resource), decl.func_return
 
-(* EField *)
+and check_expr_node delta gamma (node : Ast.expr_node) (location: Ast.location) : expr_node * typ = 
+  match node with
+  | Ast.EVar x -> check_variable x gamma location
+  | Ast.EConst c -> check_constant c delta location
+  | Ast.ECall (func_name, args, resource_optional) -> check_func_call func_name args resource_optional delta gamma location
   | Ast.EField (e, field_name) ->
     let typed_e = expr delta gamma e in
     let field_type = match typed_e.expr_typ with
@@ -133,6 +98,39 @@ and expr_node (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name
     let te2 = expr delta gamma e2 in
     let result_typ = check_binop op te1.expr_typ te2.expr_typ in
     EBinOp (op, te1, te2), result_typ
+
+and check_constant (const: Ast.constant) delta (location: Ast.location) : expr_node * typ = 
+  let const, typ = match const with
+      | Ast.CText  text           -> CText text, TText
+      | Ast.CInt   int           -> CInt int, TInt
+      | Ast.CFloat float           -> CFloat float, TFloat
+      | Ast.CBool  bool           -> CBool bool, TBool
+      | Ast.CCode  code           -> CCode code, TCode
+      | Ast.CFile  file           -> CFile file, TFile
+      | Ast.CCustomType name   ->
+          if Hashtbl.mem delta name then
+            CCustomType name, TCustomType name
+          else unbound_type location name
+    in
+    EConst const, typ
+and check_variable (x: name) (gamma : (name, typ) Hashtbl.t) (location: Ast.location) : expr_node * typ =
+  let ty = match Hashtbl.find_opt gamma x with
+      | Some t -> t
+      | None   -> unbound_var location x
+    in
+    EVar x, ty
+and check_binop (op : binop) (type1 : typ) (type2 : typ) (location: Ast.location) : typ = match op, type1, type2 with
+  | Concat, TText, TText -> TText
+  | Concat, TCode, TText -> TText
+  | Concat, TText, TCode -> TText
+  | Concat, TCode, TCode -> TText
+  | _, TInt,   TInt   -> TInt
+  | _, TFloat, TFloat -> TFloat
+  | _, TFloat, TInt   -> TFloat
+  | _, TInt,   TFloat -> TFloat
+  | Concat, _, _ -> error location "Concat requires Text operands"
+  | _, typ1, typ2    -> error location ("Arithmetic requires numeric operands, got " ^
+                     string_of_typ typ1 ^ " and " ^ string_of_typ typ2)
 
 and statement (delta) (gamma) (location: Ast.location)= function
 
@@ -169,7 +167,7 @@ and check_prompt_holes delta (f : Ast.func_declaration) : prompt_part list =
     | Ast.PromptHole e -> PromptHole (expr delta gamma e))
     f.func_prompt
 
-and convert_location (location: Ast.location) : location =
+and convert_location (location: Ast.location) : Ast.location =
     {
       file = location.file;
       line = location.line;

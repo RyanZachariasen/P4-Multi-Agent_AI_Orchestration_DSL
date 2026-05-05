@@ -59,7 +59,7 @@ type func_declaration = {
   func_name:          name;
   func_params:        (name * typ) list;
   func_return:        typ;
-  func_needsResource: bool;
+  func_needs_resource: bool;
   func_prompt:        prompt_part list;
 }
 type custom_type_declaration = {
