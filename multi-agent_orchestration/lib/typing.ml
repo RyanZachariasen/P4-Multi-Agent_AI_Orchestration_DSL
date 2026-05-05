@@ -143,8 +143,7 @@ and check_binop (opperand : Ast.binop) (expr_1 : Ast.expr) (expr_2 : Ast.expr) d
     EBinOp (t_opperand, typed_expr_1, typed_expr_2), result_typ
   
 
-and statement (delta) (gamma) (location: Ast.location)= function
-
+and statement delta gamma (location: Ast.location)= function
   | Ast.SLet (x, e) ->
     let typed_e = expr delta gamma e in
     Hashtbl.replace gamma x typed_e.expr_typ;
@@ -170,13 +169,14 @@ and statement (delta) (gamma) (location: Ast.location)= function
     SReadFile typed_path
 
   
-and check_prompt_holes delta (f : Ast.func_declaration) : prompt_part list =
-  let gamma = Hashtbl.create (List.length f.func_params) in
-  List.iter (fun (p, t) -> Hashtbl.add gamma p t) f.func_params;
+and check_prompt_holes delta (func : Ast.func_declaration) : prompt_part list =
+  let gamma = Hashtbl.create (List.length func.func_params) in
+
+  List.iter (fun (p, t) -> Hashtbl.add gamma p (convert_type t)) func.func_params;
   List.map (function
     | Ast.PromptText s -> PromptText s
     | Ast.PromptHole e -> PromptHole (expr delta gamma e))
-    f.func_prompt
+    func.func_prompt
 
 and convert_location (location: Ast.location) : Ast.location =
     {
@@ -185,21 +185,34 @@ and convert_location (location: Ast.location) : Ast.location =
       col = location.col;
     }
 
+and convert_type (typ : Ast.typ) : typ = 
+  match typ with 
+  | Ast.TText -> TText
+  | Ast.TBool -> TBool
+  | Ast.TCustomType n-> TCustomType n
+  | Ast.TCode -> TCode
+  | Ast.TInt -> TInt
+  | Ast.TFloat -> TFloat
+  | Ast.TFile -> TFile
+
+and check_func_declaration (func: Ast.func_declaration) delta gamma = 
+  if Hashtbl.mem function_env func.func_name then
+          duplicate_declaration func.func_location func.func_name;
+        let typed_prompt = check_prompt_holes delta func in
+        let typed_params = List.map (fun (name, param) -> (name, convert_type param)) func.func_params in
+
+        let typed_f = {
+          func_name          = func.func_name;
+          func_params        = typed_params;
+          func_return        = convert_type func.func_return;
+          func_needs_resource = func.func_needs_resource;
+          func_prompt        = typed_prompt;
+        } in
+        Hashtbl.add function_env func.func_name typed_f;
+        DFunc typed_f
 and check_declaration (decl : Ast.declaration) : declaration = match decl with
-    | Ast.DFunc f ->
-      if Hashtbl.mem function_env f.func_name then
-        duplicate_declaration f.func_location f.func_name;
-      let typed_prompt = check_prompt_holes custom_type_env f in
-      
-      let typed_f = {
-        func_name          = f.func_name;
-        func_params        = f.func_params;
-        func_return        = f.func_return;
-        func_needsResource = f.func_needs_resource;
-        func_prompt        = f.func_prompt;
-      } in
-      Hashtbl.add function_env f.func_name typed_f;
-      DFunc typed_f
+    | Ast.DFunc func -> check_func_declaration func custom_type_env variable_env
+     
 
     | Ast.DResource r ->
       if Hashtbl.mem resource_env r.resource_name then
