@@ -40,37 +40,6 @@ let rec expr delta gamma (untyped_expr : Ast.expr) : expr =
   { expr_node = typed_expr; 
     expr_typ = typ }
 
-and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_optional: name option) delta gamma (location: Ast.location) =
-  let decl = match Hashtbl.find_opt function_env func_name with
-    | Some func_decl  -> func_decl
-    | None -> unbound_func location func_name
-  in
-  (* Tjekker for arity*)
-  let expected_arguments = List.length decl.func_params in
-  let receive_arguments = List.length args in
-  if expected_arguments <> receive_arguments then
-     bad_arity location func_name expected_arguments receive_arguments;
-
-  (* Tjekker func args*)
-  let typed_args = List.map2
-    (fun (_, param_typ) arg ->
-      let targ = expr delta gamma arg in
-      if not (check_subtype targ.expr_typ param_typ) then
-        type_mismatch location targ.expr_typ param_typ;
-      targ)
-    decl.func_params args
-  in
-  (* Tjekker resource*)
-  let typed_resource = match decl.func_needs_resource, resource_optional with
-    | true, None    -> resource_required location func_name
-    | false, Some _ -> resource_not_needed location func_name
-    | false, None   -> None
-    | true, Some resource  ->
-      (match Hashtbl.find_opt resource_env resource with
-        | Some res_decl -> Some res_decl
-        | None          -> unbound_resource location resource)
-    in
-    ECall (func_name, typed_args, typed_resource), decl.func_return
 
 and check_expr_node delta gamma (node : Ast.expr_node) (location: Ast.location) : expr_node * typ = 
   match node with
@@ -119,6 +88,39 @@ and check_variable (x: name) (gamma : (name, typ) Hashtbl.t) (location: Ast.loca
       | None   -> unbound_var location x
     in
     EVar x, ty
+
+and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_optional: name option) delta gamma (location: Ast.location) =
+  let decl = match Hashtbl.find_opt function_env func_name with
+    | Some func_decl  -> func_decl
+    | None -> unbound_func location func_name
+  in
+  (* Tjekker for arity*)
+  let expected_arguments = List.length decl.func_params in
+  let receive_arguments = List.length args in
+  if expected_arguments <> receive_arguments then
+     bad_arity location func_name expected_arguments receive_arguments;
+
+  (* Tjekker func args*)
+  let typed_args = List.map2
+    (fun (_, param_typ) arg ->
+      let targ = expr delta gamma arg in
+      if not (check_subtype targ.expr_typ param_typ) then
+        type_mismatch location targ.expr_typ param_typ;
+      targ)
+    decl.func_params args
+  in
+  (* Tjekker resource*)
+  let _ = match decl.func_needs_resource, resource_optional with
+    | true, None    -> resource_required location func_name
+    | false, Some _ -> resource_not_needed location func_name
+    | false, None   -> None
+    | true, Some resource  ->
+      (match Hashtbl.find_opt resource_env resource with
+        | Some res_decl -> Some res_decl
+        | None          -> unbound_resource location resource);
+    in
+    ECall (func_name, typed_args, resource_optional), decl.func_return
+
 and check_binop (op : binop) (type1 : typ) (type2 : typ) (location: Ast.location) : typ = match op, type1, type2 with
   | Concat, TText, TText -> TText
   | Concat, TCode, TText -> TText
