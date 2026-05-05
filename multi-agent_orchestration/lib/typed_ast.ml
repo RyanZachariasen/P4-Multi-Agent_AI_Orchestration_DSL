@@ -1,7 +1,5 @@
 
 type name = string
-type location = { file: string; line: int; col: int }
-
 type provider = Anthropic | OpenAI | Gemini | Grok
 
 type typ =
@@ -44,7 +42,6 @@ and resource_declaration = {
   resource_model:    string;
   max_tokens:        int option;
   system_prompt:     string option;
-  resource_location: location;
 }
 
 type statement =
@@ -63,15 +60,11 @@ type func_declaration = {
   func_params:        (name * typ) list;
   func_return:        typ;
   func_needsResource: bool;
-  func_prompt:        prompt_part list; 
-  func_prompt_holes:  (name * typ) list;
-  func_builtin:       bool;
-  func_location:      location;
+  func_prompt:        prompt_part list;
 }
 type custom_type_declaration = {
   type_name:     name;
   type_fields:   (name * typ) list;
-  type_location: location;
 }
 
 type declaration =
@@ -83,7 +76,6 @@ type workflow = {
   workflow_name:   name;
   workflow_params: (name * typ) list;
   workflow_body:   statement list;
-  workflow_loc:    location;
 }
 
 type program = {
