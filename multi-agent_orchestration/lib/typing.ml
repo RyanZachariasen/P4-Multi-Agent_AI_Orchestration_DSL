@@ -40,25 +40,24 @@ let rec expr delta gamma (untyped_expr : Ast.expr) : expr =
   { expr_node = typed_expr; 
     expr_typ = typ }
 
+and check_field (e: Ast.expr) (field_name: name) delta gamma (location: Ast.location) : expr_node * typ= 
+  let custom_type = expr delta gamma e in
+  let field_type = match custom_type.expr_node with
+  | EConst CCustomType name ->
+      let declaration = Hashtbl.find custom_type_env name in
+      (match List.assoc_opt field_name declaration.type_fields with
+        | Some typ -> typ
+        | None   -> unbound_field location name field_name)
+  | _ -> error location "error accessing field"
+  in
 
+  EField (custom_type, field_name, field_type), field_type
 and check_expr_node delta gamma (node : Ast.expr_node) (location: Ast.location) : expr_node * typ = 
   match node with
   | Ast.EVar x -> check_variable x gamma location
   | Ast.EConst c -> check_constant c delta location
   | Ast.ECall (func_name, args, resource_optional) -> check_func_call func_name args resource_optional delta gamma location
-  | Ast.EField (e, field_name) ->
-    let typed_e = expr delta gamma e in
-    let field_type = match typed_e.expr_typ with
-      | TCustomType custom_name ->
-        let decl = match Hashtbl.find_opt delta custom_name with
-          | Some d -> d
-          | None   -> unbound_type location custom_name
-        in
-        (match List.assoc_opt field_name decl.type_fields with
-          | Some t -> t
-          | None   -> unbound_field location custom_name field_name)
-    in
-    EField (typed_e, field_name, field_type), field_type
+  | Ast.EField (e, field_name) -> check_field e field_name delta gamma location
     
     
 (* EBinOp *)
