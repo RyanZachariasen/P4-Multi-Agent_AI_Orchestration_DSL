@@ -134,9 +134,8 @@ and expr_node (delta : (name, custom_type_declaration) Hashtbl.t) (gamma : (name
     let result_typ = check_binop op te1.expr_typ te2.expr_typ in
     EBinOp (op, te1, te2), result_typ
 
-
-
 and statement (delta) (gamma) (location: Ast.location)= function
+
   | Ast.SLet (x, e) ->
     let typed_e = expr delta gamma e in
     Hashtbl.replace gamma x typed_e.expr_typ;
@@ -170,12 +169,19 @@ and check_prompt_holes delta (f : Ast.func_declaration) : prompt_part list =
     | Ast.PromptHole e -> PromptHole (expr delta gamma e))
     f.func_prompt
 
+and convert_location (location: Ast.location) : location =
+    {
+      file = location.file;
+      line = location.line;
+      col = location.col;
+    }
 
 and check_declaration (decl : Ast.declaration) : declaration = match decl with
     | Ast.DFunc f ->
       if Hashtbl.mem function_env f.func_name then
         duplicate_declaration f.func_location f.func_name;
       let typed_prompt = check_prompt_holes custom_type_env f in
+      
       let typed_f = {
         func_name          = f.func_name;
         func_params        = f.func_params;

@@ -13,7 +13,6 @@ let handle_lexer_error (error_message : string) (lexbuf : Lexing.lexbuf) =
     error_message;
   exit 1;;
 
-
 let handle_parser_error (lexbuf : Lexing.lexbuf) =
   let pos = lexbuf.lex_curr_p in
   Printf.eprintf "Syntax error at %s:%d:%d\n" pos.pos_fname pos.pos_lnum
@@ -48,8 +47,6 @@ let () =
   let filename = get_file_name Sys.argv in
   let compiler_mode = get_compiler_mode Sys.argv in
   let file_channel = open_in filename in
-
-
   let lexbuf = Lexing.from_channel file_channel in
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = filename };
   close_in file_channel;
