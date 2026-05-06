@@ -247,7 +247,7 @@ and check_statement_node (node: Ast.statement_node) (location: Ast.location) del
 and check_prompt_holes (func : Ast.func_declaration) delta gamma alpha beta: prompt_part list =
   let gamma_local : variable_env = Hashtbl.create (List.length func.func_params) in
 
-  List.iter (fun (p, t) -> Hashtbl.add gamma p (convert_type t)) func.func_params;
+  List.iter (fun (p, t) -> Hashtbl.add gamma_local p (convert_type t)) func.func_params;
   List.map (function
     | Ast.PromptText s -> PromptText s
     | Ast.PromptHole e -> PromptHole (expr e delta gamma_local alpha beta))

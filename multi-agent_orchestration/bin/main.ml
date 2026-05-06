@@ -19,6 +19,10 @@ let handle_parser_error (lexbuf : Lexing.lexbuf) =
     (pos.pos_cnum - pos.pos_bol);
   exit 1;;
 
+let handle_type_error (location: Ast.location) (message: string) =
+  Printf.eprintf "Type error at %s:%d:%d %s\n" location.file location.line location.col message;
+  exit 1;;
+
 
 let parse_file (filename : string) lexbuf : Ast.program =
   let ast = Parser.program Lexer.next_token lexbuf in
@@ -26,7 +30,7 @@ let parse_file (filename : string) lexbuf : Ast.program =
   ast;;
 
 let typecheck_ast (ast: Ast.program) : Typed_ast.program = 
-    let typed_ast = Typing.check_program program in
+    let typed_ast = Typing.check_program ast in
     Printf.printf "Successfully typechecked program!";
     typed_ast;;
 
@@ -49,19 +53,20 @@ let () =
   let file_channel = open_in filename in
   let lexbuf = Lexing.from_channel file_channel in
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = filename };
-  close_in file_channel;
   try
     let ast = parse_file filename lexbuf in
     if compiler_mode = Some "--parse-only" then (
       print_endline "Exiting in parse only mode";
       exit 0);
 
-    let typed_ast = typecheck_ast ast in
+    let _ = typecheck_ast ast in
 
     if compiler_mode = Some "--type-only" then (
       print_endline "Exiting in type only mode";
       exit 0);
+    
+      close_in file_channel;
   with
   | Lexer.Lexing_error error_message -> handle_lexer_error error_message lexbuf
   | Parser.Error -> handle_parser_error lexbuf
-  | Typing.Type_error error_message -> print_endline error_message
+  | Typing.Type_error (location, error_message) -> handle_type_error location error_message
