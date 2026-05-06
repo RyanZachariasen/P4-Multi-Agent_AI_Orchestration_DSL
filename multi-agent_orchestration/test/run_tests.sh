@@ -21,7 +21,7 @@ while read -r f; do
     fi
 done < <(find test/syntax/bad -name "*.mai")
 
-echo "All syntax tests passed"
+echo "All syntax tests passed!"
 echo "Running type tests..."
 
 # Good type tests
@@ -36,8 +36,10 @@ done < <(find test/type/good -name "*.mai")
 # Bad type tests
 while read -r f; do
     if make run ARGS="$f --type-only" > ./test_log 2>&1; then
-        echo "FAIL: $f should parse"
+        echo "FAIL: $f shouldn't parse"
         cat test_log
         exit 1
     fi
 done < <(find test/type/bad -name "*.mai")
+
+echo "All type tests passed!"

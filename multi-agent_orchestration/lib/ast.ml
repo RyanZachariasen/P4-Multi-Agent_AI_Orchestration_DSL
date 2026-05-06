@@ -21,8 +21,7 @@ and constant =
   | CBool of bool                (** compiler generates bool parse *)  
   | CCode of string                 (** text + fence stripping; Code <= Text *)  
   | CFile of string                   (** file path for builtin tools *)  
-
-  | CCustomType of (name * expr) list          (** user-declared record → Pydantic *)  
+  | CCustomType of name          (** user-declared record → Pydantic *)  
   
 and expr =
   { expr_node: expr_node;
@@ -32,8 +31,6 @@ and expr_node =
   | EVar of name
   | EConst of constant
   | ECall  of name * expr list * name option
-      (** f(a,b) on Sonnet → ECall("f",[a;b], Some "Sonnet")  
-          read_pdf(x)      → ECall("read_pdf",[x], None)      *)  
   | EField  of expr * name   (** verdict.score *)
   | EBinOp  of binop * expr * expr
 
