@@ -23,7 +23,7 @@
 
 %token RESOURCE ANTHROPIC OPENAI GEMINI GROK
 
-%token FUNC ARROW WORKFLOW TYPE ON
+%token FUNC ARROW WORKFLOW TYPE ON MAX_TOKENS SYSTEM_PROMPT
 
 %token NEWLINE
 
@@ -193,10 +193,10 @@ custom_type_field:
 
 resource_optionals: 
 | { (None, None) }
-| COMMA ; ident = IDENT ; ASSIGN ; system_prompt = TEXT; rest = resource_optionals {
+| COMMA ; SYSTEM_PROMPT ; ASSIGN ; system_prompt = TEXT; rest = resource_optionals {
   let (max_tokens, _) = rest in
   (max_tokens, Some system_prompt) }
-| COMMA ; ident = IDENT ; ASSIGN ; max_tokens = INT; rest = resource_optionals {
+| COMMA ; MAX_TOKENS ; ASSIGN ; max_tokens = INT; rest = resource_optionals {
   let (_, system_prompt) = rest in
   (Some max_tokens, system_prompt) }
 
