@@ -20,34 +20,107 @@ let unbound_type location typ = error location ("Unbound type: " ^ typ)
 let unbound_resource location resource = error location ("Unbound resource: " ^ resource)
 let unbound_field location typ field = error location ("Unbound field: Type " ^ typ ^ " has no field " ^ field)
 let resource_required location func = error location ("Resource required: Call to " ^ func ^ " requires a resource")
-let duplicate_declaration location f = error location ("Duplicate declaration: " ^ f ^ " is already declared")
-let resource_not_needed location f = error location ("Resource not needed: " ^ f ^ " does not take a resource")
+let duplicate_declaration location name = error location ("Duplicate declaration: " ^ name ^ " is already declared")
+let resource_not_needed location name = error location ("Resource not needed: " ^ name ^ " does not take a resource")
 let bad_arity location func expected got = error location ("Bad arity: function " ^ func ^ " expects " ^ string_of_int expected ^ " arguments, got " ^ string_of_int got)
 let type_mismatch location typ1 typ2 = error location ("Type mismatch: expected " ^ string_of_typ typ2 ^ ", got " ^ string_of_typ typ1)
 
 (* Environment setup *)
-let function_env: (name, func_declaration) Hashtbl.t = Hashtbl.create 8
-let resource_env: (name, resource_declaration) Hashtbl.t = Hashtbl.create 8
-let custom_type_env: (name, custom_type_declaration) Hashtbl.t = Hashtbl.create 8
-let variable_env: (name, typ) Hashtbl.t = Hashtbl.create 8
 
-let check_subtype (t1 : typ) (t2 : typ) : bool = match t1, t2 with
+type funcion_env = (name, func_declaration) Hashtbl.t
+type resource_env = (name, resource_declaration) Hashtbl.t
+type custom_type_env = (name, custom_type_declaration) Hashtbl.t
+type variable_env = (name, typ) Hashtbl.t
+
+let rec check_subtype (t1 : typ) (t2 : typ) : bool = match t1, t2 with
 | TCode, TText -> true
 | t1, t2 -> t1 = t2
 
-let rec expr delta gamma (untyped_expr : Ast.expr) : expr =
-  let typed_expr, typ = check_expr_node delta gamma untyped_expr.expr_node untyped_expr.expr_location in
+and check_program (program : Ast.program) : program =
+  let alpha: funcion_env  = Hashtbl.create 8 in
+  let beta: resource_env = Hashtbl.create 8 in
+  let delta: custom_type_env = Hashtbl.create 8 in
+  let gamma: variable_env = Hashtbl.create 8 in
+
+  let typed_decls = List.map (fun decl -> check_declaration decl delta gamma alpha beta) program.prog_decls in
+
+  let typed_wf = workflow program.prog_workflow delta gamma alpha beta in
+
+  { prog_decls    = typed_decls;
+    prog_workflow = typed_wf }
+
+and  workflow (wf : Ast.workflow) delta gamma alpha beta =
+  let typed_body = List.map (fun stmt -> check_statement stmt delta gamma alpha beta) wf.workflow_body in 
+  {
+    workflow_name = "workflow";
+    workflow_params = [];
+    workflow_body = typed_body;
+  }
+
+and check_declaration (decl : Ast.declaration) delta gamma alpha beta : declaration = 
+    match decl with
+    | Ast.DFunc func -> check_func_declaration func delta gamma alpha beta
+     
+    | Ast.DResource r ->
+      if Hashtbl.mem beta r.resource_name then duplicate_declaration r.resource_location r.resource_name;
+      let typed_r = {
+        resource_name     = r.resource_name;
+        resource_provider = convert_provider r.resource_provider;
+        resource_model    = r.resource_model;
+        max_tokens        = r.max_tokens;
+        system_prompt     = r.system_prompt;
+      } in
+      Hashtbl.add beta r.resource_name typed_r;
+      DResource typed_r 
+
+    | Ast.DCustomType ct ->
+      if Hashtbl.mem delta ct.type_name then
+        duplicate_declaration ct.type_location ct.type_name;
+      let typed_fields = List.map (fun (name, field) -> (name, convert_type field)) ct.type_fields in
+      let typed_ct = {
+        type_name     = ct.type_name;
+        type_fields   = typed_fields;
+      } in
+      Hashtbl.add delta ct.type_name typed_ct;
+      DCustomType typed_ct
+
+and convert_provider (provider: Ast.provider) =
+  match provider with
+  | Ast.Anthropic -> Anthropic
+  | Ast.OpenAI -> OpenAI
+  | Ast.Grok -> Grok
+  | Ast.Gemini -> Gemini
+
+and check_func_declaration (func: Ast.func_declaration) delta gamma alpha beta = 
+  if Hashtbl.mem alpha func.func_name then
+          duplicate_declaration func.func_location func.func_name;
+        let typed_prompt = check_prompt_holes func delta gamma alpha beta in
+        let typed_params = List.map (fun (name, param) -> (name, convert_type param)) func.func_params in
+
+        let typed_f = {
+          func_name          = func.func_name;
+          func_params        = typed_params;
+          func_return        = convert_type func.func_return;
+          func_needs_resource = func.func_needs_resource;
+          func_prompt        = typed_prompt;
+        } in
+        Hashtbl.add alpha func.func_name typed_f;
+        DFunc typed_f
+
+
+and expr (untyped_expr : Ast.expr) delta gamma alpha beta : expr =
+  let typed_expr, typ = check_expr_node untyped_expr.expr_node untyped_expr.expr_location delta gamma alpha beta in
   { expr_node = typed_expr; 
     expr_typ = typ }
 
 
-and check_expr_node delta gamma (node : Ast.expr_node) (location: Ast.location) : expr_node * typ = 
+and check_expr_node (node : Ast.expr_node) (location: Ast.location) delta gamma alpha beta : expr_node * typ = 
   match node with
-  | Ast.EVar x -> check_variable x gamma location
+  | Ast.EVar x -> check_variable x location delta gamma alpha beta
   | Ast.EConst c -> check_constant c delta location
-  | Ast.ECall (func_name, args, resource_optional) -> check_func_call func_name args resource_optional delta gamma location
-  | Ast.EField (e, field_name) -> check_field e field_name delta gamma location
-  | Ast.EBinOp (opperand, e1, e2) -> check_binop opperand e1 e2 delta gamma location
+  | Ast.ECall (func_name, args, resource_optional) -> check_func_call func_name args resource_optional delta gamma alpha beta location
+  | Ast.EField (e, field_name) -> check_field e field_name location delta gamma alpha beta
+  | Ast.EBinOp (opperand, e1, e2) -> check_binop opperand e1 e2 location delta gamma alpha beta
     
 and check_constant (const: Ast.constant) delta (location: Ast.location) : expr_node * typ = 
   let const, typ = match const with
@@ -64,18 +137,18 @@ and check_constant (const: Ast.constant) delta (location: Ast.location) : expr_n
     in
     EConst const, typ
 
-and check_variable (x: name) (gamma : (name, typ) Hashtbl.t) (location: Ast.location) : expr_node * typ =
+and check_variable (x: name) (location: Ast.location) delta gamma alpha beta: expr_node * typ =
   let ty = match Hashtbl.find_opt gamma x with
       | Some t -> t
       | None -> unbound_var location x
     in
     EVar x, ty
 
-and check_field (e: Ast.expr) (field_name: name) delta gamma (location: Ast.location) : expr_node * typ= 
-  let custom_type = expr delta gamma e in
+and check_field (e: Ast.expr) (field_name: name) (location: Ast.location) delta gamma alpha beta : expr_node * typ= 
+  let custom_type = expr e delta gamma alpha beta in
   let field_type = match custom_type.expr_node with
   | EConst CCustomType name ->
-      let declaration = Hashtbl.find custom_type_env name in
+      let declaration = Hashtbl.find delta name in
       (match List.assoc_opt field_name declaration.type_fields with
         | Some typ -> typ
         | None   -> unbound_field location name field_name)
@@ -83,8 +156,8 @@ and check_field (e: Ast.expr) (field_name: name) delta gamma (location: Ast.loca
   in
 
   EField (custom_type, field_name, field_type), field_type
-and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_optional: name option) delta gamma (location: Ast.location) =
-  let decl = match Hashtbl.find_opt function_env func_name with
+and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_optional: name option) delta gamma alpha beta (location: Ast.location) =
+  let decl = match Hashtbl.find_opt alpha func_name with
     | Some func_decl  -> func_decl
     | None -> unbound_func location func_name
   in
@@ -97,7 +170,7 @@ and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_option
   (* Tjekker func args*)
   let typed_args = List.map2
     (fun (_, param_typ) arg ->
-      let targ = expr delta gamma arg in
+      let targ = expr arg delta gamma alpha beta in
       if not (check_subtype targ.expr_typ param_typ) then
         type_mismatch location targ.expr_typ param_typ;
       targ)
@@ -109,15 +182,15 @@ and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_option
     | false, Some _ -> resource_not_needed location func_name
     | false, None   -> None
     | true, Some resource  ->
-      (match Hashtbl.find_opt resource_env resource with
+      (match Hashtbl.find_opt beta resource with
         | Some res_decl -> Some res_decl
         | None          -> unbound_resource location resource);
     in
     ECall (func_name, typed_args, resource_optional), decl.func_return
 
-and check_binop (opperand : Ast.binop) (expr_1 : Ast.expr) (expr_2 : Ast.expr) delta gamma (location: Ast.location) : expr_node * typ = 
-    let typed_expr_1 = expr delta gamma expr_1 in
-    let typed_expr_2 = expr delta gamma expr_2 in
+and check_binop (opperand : Ast.binop) (expr_1 : Ast.expr) (expr_2 : Ast.expr) (location: Ast.location) delta gamma alpha beta : expr_node * typ = 
+    let typed_expr_1 = expr expr_1 delta gamma alpha beta in
+    let typed_expr_2 = expr expr_2 delta gamma alpha beta in
 
     let t_opperand = match opperand with
     | Ast.Add -> Add
@@ -142,20 +215,23 @@ and check_binop (opperand : Ast.binop) (expr_1 : Ast.expr) (expr_2 : Ast.expr) d
                      string_of_typ typ1 ^ " and " ^ string_of_typ typ2) in
     EBinOp (t_opperand, typed_expr_1, typed_expr_2), result_typ
   
+and check_statement (statement: Ast.statement) delta gamma alpha beta : statement =
+  check_statement_node statement.statement_node statement.statement_location delta gamma alpha beta
 
-and statement delta gamma (location: Ast.location)= function
+and check_statement_node (node: Ast.statement_node) (location: Ast.location) delta gamma alpha beta : statement= 
+  match node with
   | Ast.SLet (x, e) ->
-    let typed_e = expr delta gamma e in
+    let typed_e = expr e delta gamma alpha beta in
     Hashtbl.replace gamma x typed_e.expr_typ;
     SLet (x, typed_e.expr_typ, typed_e)
 
   | Ast.SPrint e ->
-    let typed_e = expr delta gamma e in
+    let typed_e = expr e delta gamma alpha beta in
     SPrint typed_e
 
   | Ast.SWriteFile (path_expr, content_expr) ->
-    let typed_path = expr delta gamma path_expr in
-    let typed_content = expr delta gamma content_expr in
+    let typed_path = expr path_expr delta gamma alpha beta in
+    let typed_content = expr content_expr delta gamma alpha beta in
     if not (check_subtype typed_path.expr_typ TFile) then
       type_mismatch location typed_path.expr_typ TFile;
     if not (check_subtype typed_content.expr_typ TText) then
@@ -163,28 +239,19 @@ and statement delta gamma (location: Ast.location)= function
     SWriteFile (typed_path, typed_content)
 
   | Ast.SReadFile path_expr ->
-    let typed_path = expr delta gamma path_expr in
+    let typed_path = expr path_expr delta gamma alpha beta in
     if not (check_subtype typed_path.expr_typ TFile) then
       type_mismatch location typed_path.expr_typ TFile;
     SReadFile typed_path
 
-  
-and check_prompt_holes delta (func : Ast.func_declaration) : prompt_part list =
-  let gamma = Hashtbl.create (List.length func.func_params) in
+and check_prompt_holes (func : Ast.func_declaration) delta gamma alpha beta: prompt_part list =
+  let gamma_local : variable_env = Hashtbl.create (List.length func.func_params) in
 
   List.iter (fun (p, t) -> Hashtbl.add gamma p (convert_type t)) func.func_params;
   List.map (function
     | Ast.PromptText s -> PromptText s
-    | Ast.PromptHole e -> PromptHole (expr delta gamma e))
+    | Ast.PromptHole e -> PromptHole (expr e delta gamma_local alpha beta))
     func.func_prompt
-
-and convert_location (location: Ast.location) : Ast.location =
-    {
-      file = location.file;
-      line = location.line;
-      col = location.col;
-    }
-
 and convert_type (typ : Ast.typ) : typ = 
   match typ with 
   | Ast.TText -> TText
@@ -195,62 +262,3 @@ and convert_type (typ : Ast.typ) : typ =
   | Ast.TFloat -> TFloat
   | Ast.TFile -> TFile
 
-and check_func_declaration (func: Ast.func_declaration) delta gamma = 
-  if Hashtbl.mem function_env func.func_name then
-          duplicate_declaration func.func_location func.func_name;
-        let typed_prompt = check_prompt_holes delta func in
-        let typed_params = List.map (fun (name, param) -> (name, convert_type param)) func.func_params in
-
-        let typed_f = {
-          func_name          = func.func_name;
-          func_params        = typed_params;
-          func_return        = convert_type func.func_return;
-          func_needs_resource = func.func_needs_resource;
-          func_prompt        = typed_prompt;
-        } in
-        Hashtbl.add function_env func.func_name typed_f;
-        DFunc typed_f
-and check_declaration (decl : Ast.declaration) : declaration = match decl with
-    | Ast.DFunc func -> check_func_declaration func custom_type_env variable_env
-     
-
-    | Ast.DResource r ->
-      if Hashtbl.mem resource_env r.resource_name then
-        duplicate_declaration r.resource_name;
-      let typed_r = {
-        resource_name     = r.resource_name;
-        resource_provider = r.resource_provider;
-        resource_model    = r.resource_model;
-        max_tokens        = r.max_tokens;
-        system_prompt     = r.system_prompt;
-        resource_location = r.resource_location;
-      } in
-      Hashtbl.add resource_env r.resource_name typed_r;
-      DResource typed_r 
-
-    | Ast.DCustomType ct ->
-      if Hashtbl.mem custom_type_env ct.type_name then
-        duplicate_declaration ct.type_name;
-      let typed_ct = {
-        type_name     = ct.type_name;
-        type_fields   = ct.type_fields;
-        type_location = ct.type_location;
-      } in
-      Hashtbl.add custom_type_env ct.type_name typed_ct;
-      DCustomType typed_ct
-
-and workflow delta gamma (wf : Ast.workflow) =
-  let typed_body = List.map (statement delta gamma) wf.workflow_body in 
-  {
-    workflow_name = "workflow";
-    workflow_params = [];
-    workflow_body = typed_body;
-    workflow_loc = wf.workflow_location;
-  }
-
-and check_program (p : Ast.program) : program =
-  let typed_decls = List.map check_declaration p.prog_decls in
-  let typed_wf = workflow custom_type_env variable_env p.prog_workflow in
-
-  { prog_decls    = typed_decls;
-    prog_workflow = typed_wf }
