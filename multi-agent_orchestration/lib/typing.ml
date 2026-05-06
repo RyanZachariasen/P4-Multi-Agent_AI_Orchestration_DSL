@@ -201,7 +201,7 @@ and check_binop (opperand : Ast.binop) (expr_1 : Ast.expr) (expr_2 : Ast.expr) (
     in
 
   let result_typ = 
-  match opperand, typed_expr_1.expr_typ, typed_expr_1.expr_typ with
+  match opperand, typed_expr_1.expr_typ, typed_expr_2.expr_typ with
   | Concat, TText, TText -> TText
   | Concat, TCode, TText -> TText
   | Concat, TText, TCode -> TText
