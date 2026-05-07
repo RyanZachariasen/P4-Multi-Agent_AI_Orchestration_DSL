@@ -1,0 +1,1 @@
+val declaration: Typed_ast.declaration -> Py_ast.py_statement

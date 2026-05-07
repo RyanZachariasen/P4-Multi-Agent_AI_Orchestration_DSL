@@ -19,18 +19,17 @@ and py_constant =
 
 and py_binop = PyAdd | PySub | PyMul | PyDiv | PyConcat
 
-type py_stmt =
+type py_statement =
   | PyAssign     of string * py_expr                        (* x = expr *)
   | PyExpr       of py_expr                                 (* print(x) *)
   | PyReturn     of py_expr                                 (* return x *)
-  | PyFuncDef    of string * string list * string list * py_stmt list  
-                                                            (* def f(args, *, kwargs): body *)
+  | PyFuncDef    of string * string list * string list * py_statement list                                                            (* def f(args, *, kwargs): body *)
   | PyImport     of string                                  (* import anthropic *)
   | PyImportFrom of string * string list                    (* from pydantic import BaseModel *)
   | PyClassDef   of string * string * (string * string) list  
                                                             (* class Verdict(BaseModel): fields *)
 
 type py_module = {
-  imports : py_stmt list;   (* all imports at top *)
-  body    : py_stmt list;   (* rest of the code *)
+  imports : py_statement list;   (* all imports at top *)
+  body    : py_statement list;   (* rest of the code *)
 }
