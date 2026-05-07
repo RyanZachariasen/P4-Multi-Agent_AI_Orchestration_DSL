@@ -12,6 +12,8 @@
       [
         "workflow", WORKFLOW; "Resource", RESOURCE; "func", FUNC; "type", TYPE;
 
+        "max_tokens", MAX_TOKENS; "system_prompt", SYSTEM_PROMPT;
+
         "anthropic", ANTHROPIC; "openai", OPENAI; "gemini", GEMINI; "grok", GROK; 
     
         "int", TINT; "float", TFLOAT; "bool", TBOOL;
