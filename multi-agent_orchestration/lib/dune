@@ -4,8 +4,10 @@
 (menhir
  (modules parser))
 
+(include_subdirs unqualified)
 (library
  (name multi_agent_orchestration)
  (public_name multi-agent_orchestration)
- (modules ast typed_ast lexer parser typing)
+ (modules ast typed_ast lexer parser typing py_ast 
+ translate_declaration translate_expr translate_program translate_statement translate_workflow)
 )
