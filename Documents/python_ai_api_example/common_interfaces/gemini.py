@@ -9,7 +9,6 @@ response = gemini.models.generate_content(
     config={
         "maxOutputTokens": 10000,
     },)
-
 response.text
 
 """EVERY PARAMETER FOR THE "GENERATE_CONTENT" METHOD USED ABOVE:

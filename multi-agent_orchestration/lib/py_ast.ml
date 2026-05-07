@@ -18,12 +18,13 @@ and py_constant =
   | PyNone
 
 and py_binop = PyAdd | PySub | PyMul | PyDiv | PyConcat
+type args = string list
 
 type py_statement =
   | PyAssign     of string * py_expr                        (* x = expr *)
   | PyExpr       of py_expr                                 (* print(x) *)
   | PyReturn     of py_expr                                 (* return x *)
-  | PyFuncDef    of string * string list * string list * py_statement list                                                            (* def f(args, *, kwargs): body *)
+  | PyFuncDef    of string * args * py_statement list                                                            (* def f(args, *, kwargs): body *)
   | PyImport     of string                                  (* import anthropic *)
   | PyImportFrom of string * string list                    (* from pydantic import BaseModel *)
   | PyClassDef   of string * string * (string * string) list  
