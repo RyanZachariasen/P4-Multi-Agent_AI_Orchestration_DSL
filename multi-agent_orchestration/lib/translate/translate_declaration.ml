@@ -4,35 +4,34 @@ let rec declaration (decl: Typed_ast.declaration) : Py_ast.py_statement  =
       if func.func_needs_resource then
         func_with_resource func 
       else func_without_resource func
-
   | Typed_ast.DResource resource -> raise Not_found
   | Typed_ast.DCustomType custom_type-> raise Not_found
-
-and handle_prompt (prompt : Typed_ast.prompt_part list) : Py_ast.py_expr =
-    raise Not_found
 
 and func_with_resource func =
   let params_to_names = List.map (fun (name, typ) -> name ) func.func_params in
 
-  (*create body*)
+  (* Find the data from the Resource object *)
   let params_with_resource = List.append params_to_names ["_resource"] in
+
   let system_prompt = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "system_prompt") in
   let model = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "model") in
   let provider = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "provider") in
   let max_tokens = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "max_tokens") in
   let prompt = handle_prompt func.func_prompt in
   
+  (*Convert the AI names into python strings*)
   let gemini_string = Py_ast.PyConst (Py_ast.PyString "gemini") in
   let antropic_string = Py_ast.PyConst (Py_ast.PyString "antropic") in
   let open_ai_string = Py_ast.PyConst (Py_ast.PyString "openai") in
-  let grok_string = Py_ast.PyConst (Py_ast.PyString "hello") in
+  let grok_string = Py_ast.PyConst (Py_ast.PyString "grok") in
 
-  
+  (*get all the statements for an ai call*)
   let gemini_call_statement = gemini_call max_tokens system_prompt model prompt in
   let openai_call_statement = openai_call max_tokens system_prompt model prompt in
   let anthropic_call_statement = antropic_call max_tokens system_prompt model prompt in
   let grok_call_statements = grok_call max_tokens system_prompt model prompt in
 
+  (*If statements to choose correct AI*)
   let gemini_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, gemini_string), [gemini_call_statement]) in
   let antropic_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, antropic_string), [anthropic_call_statement]) in
   let grok_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, grok_string), grok_call_statements) in
@@ -43,6 +42,19 @@ and func_with_resource func =
   let body = [gemini_if; antropic_if; grok_if; openai_if; return_statement] in
 
   Py_ast.PyFuncDef (func.func_name, params_with_resource, body)
+
+and handle_prompt (prompt : Typed_ast.prompt_part list) : Py_ast.py_expr =
+  let fstring = ref [] in
+
+  List.iter (fun prompt_part -> 
+    match prompt_part with
+    | Typed_ast.PromptText text -> fstring := List.append !fstring [(text, Py_ast.PyConst (Py_ast.PyString ""))];
+    | Typed_ast.PromptHole expr -> 
+        let expr = Translate_expr.expr expr in
+         fstring := List.append !fstring [("", expr)];
+     ) prompt;
+
+  Py_ast.PyFString ("", !fstring)
 
 and func_without_resource func =
   (* let params_to_names = List.map (fun (name, typ) -> name  ) func.func_params in
