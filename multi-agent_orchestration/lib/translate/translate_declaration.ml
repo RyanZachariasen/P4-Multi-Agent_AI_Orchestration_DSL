@@ -4,50 +4,29 @@ let rec declaration (decl: Typed_ast.declaration) : Py_ast.py_statement  =
       if func.func_needs_resource then
         func_with_resource func 
       else func_without_resource func
-  | Typed_ast.DResource resource ->
-    begin match resource.resource_provider with
-    | Typed_ast.Anthropic -> antropic_resource
-    | Typed_ast.Gemini -> gemini_resource resource
-    | Typed_ast.Grok -> grok_resource
-    | Typed_ast.OpenAI -> openai_resource;
-    end
+  | Typed_ast.DResource resource -> handle_resource_declaration resource
   | Typed_ast.DCustomType custom_type -> raise Not_found;
 
-and string_to_pystring str = 
-  Py_ast.PyConst (Py_ast.PyString str)
+and handle_resource_declaration resource = 
+  let client = get_correct_client resource.resource_provider in
+  let provider = provider_to_pystring resource.resource_provider in
+  let model = string_to_pystring resource.resource_model in
 
-and provider_to_pystring provider = 
-  match  provider with
-  | Typed_ast.Anthropic -> string_to_pystring "anthropic"
-  | Typed_ast.Gemini -> string_to_pystring "gemini"
-  | Typed_ast.OpenAI -> string_to_pystring "openai"
-  | Typed_ast.Grok -> string_to_pystring "grok"
+  let system_prompt = 
+    match resource.system_prompt with
+    | Some p -> string_to_pystring p
+    | None ->  string_to_pystring "" in
 
-and gemini_resource (resource: Typed_ast.resource_declaration) = 
-    let genai = Py_ast.PyName "genai" in
-    let client_method = Py_ast.PyAttr (genai, "client_method") in
+  let max_tokens = match resource.max_tokens with
+    | Some n -> Py_ast.PyConst (Py_ast.PyInt n)
+    | None ->  Py_ast.PyConst (Py_ast.PyInt 100000) in
 
-    let client = Py_ast.PyCall (client_method, [], [("api_key", string_to_pystring "GEMINI_API_KEY")]) in
-    
-    let model = string_to_pystring resource.resource_model in
-     
-    let system_prompt = 
-       match resource.system_prompt with
-      | Some p -> string_to_pystring p
-      | None ->  string_to_pystring "" in
+  let resource_object = Py_ast.PyDict [("client", client); ("model", model); ("provider", provider); ("max_tokens", max_tokens); ("system_prompt",system_prompt) ] in 
+  
+  let assign_resource = Py_ast.PyAssign (resource.resource_name, resource_object) in
+  assign_resource
 
-    let provider = provider_to_pystring resource.resource_provider in
-    
-    let max_tokens = match resource.max_tokens with
-      | Some n -> Py_ast.PyConst (Py_ast.PyInt n)
-      | None ->  Py_ast.PyConst (Py_ast.PyInt 100000) in
-
-    let resource_object = Py_ast.PyDict [("client", client); ("model", model); ("provider", provider); ("max_tokens", max_tokens); ("system_prompt",system_prompt) ] in 
-    
-    let assign_resource = Py_ast.PyAssign (resource.resource_name, resource_object) in
-    assign_resource
-
-    (* EXAMPLE 
+  (* EXAMPLE 
     coder = {
       client = genai.Client(api_key="GEMINI_API_KEY"),
       provider="gemini",
@@ -56,40 +35,46 @@ and gemini_resource (resource: Typed_ast.resource_declaration) =
       system_prompt="helpful assistant..."
     }
   *)
+and string_to_pystring str = 
+  Py_ast.PyConst (Py_ast.PyString str)
 
-and openai_resource = raise Not_found
+and provider_to_pystring provider = 
+  match provider with
+  | Typed_ast.Anthropic -> string_to_pystring "anthropic"
+  | Typed_ast.Gemini -> string_to_pystring "gemini"
+  | Typed_ast.OpenAI -> string_to_pystring "openai"
+  | Typed_ast.Grok -> string_to_pystring "grok"
+  
 
-(* EXAMPLE 
-    coder = {
-      client = OpenAI(api_key="OPENAI_API_KEY") # tilføjer en client parameter
-      provider="openai",
-      model="gpt-5.5",
-      max_tokens="1000",
-      system_prompt="helpful assistant..."
-    }
-*)
+and get_env_call str =
+  let os = Py_ast.PyName "os" in 
+  let get_env = Py_ast.PyAttr (os, "get_env") in
+  Py_ast.PyCall (get_env, [string_to_pystring str], [])
 
-and grok_resource = raise Not_found
-(* EXAMPLE 
-    coder = {
-      client = Client(api_key=os.getenv("GROK_API_KEY")) # tilføjer en client parameter
-      provider="openai",
-      model="gpt-5.5",
-      max_tokens="1000",
-      system_prompt="helpful assistant..."
-    }
-*)
-and antropic_resource = raise Not_found
-(* EXAMPLE 
-    coder = {
-      client = anthropic.Anthropic(api_key="ANTROPIC_API_KEY")
-      provider="antropic",
-      model="claude-opus-4-7",
-      max_tokens="1000",
-      system_prompt="helpful assistant..."
-    }
-*)
+and get_correct_client (provider: Typed_ast.provider) : Py_ast.py_expr = 
+  match  provider with
+    | Typed_ast.Anthropic -> 
+      let antropic = Py_ast.PyName "genai" in
+      let antropic_method = Py_ast.PyAttr (antropic, "client_method") in
+      Py_ast.PyCall (antropic_method, [], [("api_key", get_env_call "ANTROPIC_API_KEY")])
+      (* client = anthropic.Anthropic(api_key="ANTROPIC_API_KEY") *)
 
+    | Typed_ast.Gemini -> 
+      let genai = Py_ast.PyName "genai" in
+      let client_method = Py_ast.PyAttr (genai, "client_method") in
+
+      Py_ast.PyCall (client_method, [], [("api_key", get_env_call "GEMINI_API_KEY")])
+      (* client = genai.Client(api_key="GEMINI_API_KEY") *)
+
+    | Typed_ast.OpenAI -> 
+      let openai_method = Py_ast.PyName ("OpenAI") in
+      Py_ast.PyCall (openai_method, [], [("api_key", get_env_call  "OPENAI_API_KEY")]) 
+      (* client = OpenAI(api_key="OPENAI_API_KEY") *)
+
+    | Typed_ast.Grok -> 
+      let client_method = Py_ast.PyName ("client") in
+      Py_ast.PyCall (client_method, [], [("api_key", get_env_call  "GROK_API_KEY")]) 
+      (* client = Client(api_key=os.getenv("GROK_API_KEY")) *)
 
 and func_with_resource func =
   let params_to_names = List.map (fun (name, typ) -> name ) func.func_params in
