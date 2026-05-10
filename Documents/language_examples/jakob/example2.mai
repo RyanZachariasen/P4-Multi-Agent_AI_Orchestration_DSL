@@ -8,3 +8,6 @@ start:
     new_result = my_int * 1000
     print(new_result)
     
+
+
+x = read_file("text.txt")
