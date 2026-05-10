@@ -3,8 +3,7 @@
 type py_expr =
   | PyName      of string                              (* x, _client_Sonnet *)
   | PyConst     of py_constant                         (* 42, "hello", True *)
-  | PyCall      of py_expr * py_expr list * (string * py_expr) list  
-                                                       (* f(args, key=val) *)
+  | PyCall      of py_expr * py_expr list * (string * py_expr) list   (* f(args, key=val) *)
   | PyAttr      of py_expr * string                    (* response.content *)
   | PyBinOp     of py_binop * py_expr * py_expr        (* x + y *)
   | PySubscript of py_expr * py_expr                   (* x[0] *)
