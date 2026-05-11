@@ -31,7 +31,7 @@ let parse_file (filename : string) lexbuf : Ast.program =
 
 let typecheck_ast (ast: Ast.program) : Typed_ast.program = 
     let typed_ast = Typing.check_program ast in
-    Printf.printf "Successfully typechecked program!";
+    Printf.printf "Successfully typechecked program!\n";
     typed_ast;;
 
 
@@ -59,13 +59,15 @@ let () =
       print_endline "Exiting in parse only mode";
       exit 0);
 
-    let _ = typecheck_ast ast in
+    let typed_program = typecheck_ast ast in
 
     if compiler_mode = Some "--type-only" then (
       print_endline "Exiting in type only mode";
       exit 0);
+
+    let _ = Translate_program.program typed_program in
     
-      close_in file_channel;
+    close_in file_channel;
   with
   | Lexer.Lexing_error error_message -> handle_lexer_error error_message lexbuf
   | Parser.Error -> handle_parser_error lexbuf

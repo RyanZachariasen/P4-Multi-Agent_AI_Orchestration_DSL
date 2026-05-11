@@ -1,0 +1,3 @@
+Resource agent1 = anthropic("claude-sonnet")
+workflow:
+    print("hello")
