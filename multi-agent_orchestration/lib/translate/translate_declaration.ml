@@ -5,9 +5,32 @@ let rec declaration (decl: Typed_ast.declaration) : Py_ast.py_statement  =
         func_with_resource func 
       else func_without_resource func
   | Typed_ast.DResource resource -> handle_resource_declaration resource
-  | Typed_ast.DCustomType custom_type -> raise Not_found;
+  | Typed_ast.DCustomType custom_type -> handle_type_declaration custom_type
 
-and handle_resource_declaration resource = 
+and handle_type_declaration (custom_type: Typed_ast.custom_type_declaration) = 
+  let name = custom_type.type_name in
+  let fields = List.map (fun (name, typ) -> (name,  type_to_string typ)) custom_type.type_fields in 
+
+  Py_ast.PyClassDef (name, "BaseModel",fields)  
+  (*
+  class Verdict(BaseModel):
+    field_1: int
+    field_2: str
+    ...
+  *)
+
+and type_to_string (typ: Typed_ast.typ ) : string = 
+  match typ with
+    | TText -> "str"
+    | TFile -> "str"
+    | TCode -> "str"
+    | TInt -> "int"
+    | TFloat -> "float"
+    | TBool -> "bool"
+    | TCustomType name -> name
+ 
+
+and handle_resource_declaration (resource: Typed_ast.resource_declaration) = 
   let client = get_correct_client resource.resource_provider in
   let provider = provider_to_pystring resource.resource_provider in
   let model = string_to_pystring resource.resource_model in
@@ -35,6 +58,7 @@ and handle_resource_declaration resource =
       system_prompt="helpful assistant..."
     }
   *)
+
 and string_to_pystring str = 
   Py_ast.PyConst (Py_ast.PyString str)
 
@@ -44,40 +68,39 @@ and provider_to_pystring provider =
   | Typed_ast.Gemini -> string_to_pystring "gemini"
   | Typed_ast.OpenAI -> string_to_pystring "openai"
   | Typed_ast.Grok -> string_to_pystring "grok"
-  
 
-and get_env_call str =
+and getenv_call str =
   let os = Py_ast.PyName "os" in 
-  let get_env = Py_ast.PyAttr (os, "get_env") in
+  let get_env = Py_ast.PyAttr (os, "getenv") in
   Py_ast.PyCall (get_env, [string_to_pystring str], [])
 
 and get_correct_client (provider: Typed_ast.provider) : Py_ast.py_expr = 
   match  provider with
     | Typed_ast.Anthropic -> 
-      let antropic = Py_ast.PyName "genai" in
-      let antropic_method = Py_ast.PyAttr (antropic, "client_method") in
-      Py_ast.PyCall (antropic_method, [], [("api_key", get_env_call "ANTROPIC_API_KEY")])
+      let antropic = Py_ast.PyName "antropic" in
+      let antropic_method = Py_ast.PyAttr (antropic, "Anthropic") in
+      Py_ast.PyCall (antropic_method, [], [("api_key", getenv_call "ANTROPIC_API_KEY")])
       (* client = anthropic.Anthropic(api_key="ANTROPIC_API_KEY") *)
 
     | Typed_ast.Gemini -> 
       let genai = Py_ast.PyName "genai" in
-      let client_method = Py_ast.PyAttr (genai, "client_method") in
+      let client_method = Py_ast.PyAttr (genai, "Client") in
 
-      Py_ast.PyCall (client_method, [], [("api_key", get_env_call "GEMINI_API_KEY")])
+      Py_ast.PyCall (client_method, [], [("api_key", getenv_call "GEMINI_API_KEY")])
       (* client = genai.Client(api_key="GEMINI_API_KEY") *)
 
     | Typed_ast.OpenAI -> 
       let openai_method = Py_ast.PyName ("OpenAI") in
-      Py_ast.PyCall (openai_method, [], [("api_key", get_env_call  "OPENAI_API_KEY")]) 
+      Py_ast.PyCall (openai_method, [], [("api_key", getenv_call  "OPENAI_API_KEY")]) 
       (* client = OpenAI(api_key="OPENAI_API_KEY") *)
 
     | Typed_ast.Grok -> 
       let client_method = Py_ast.PyName ("client") in
-      Py_ast.PyCall (client_method, [], [("api_key", get_env_call  "GROK_API_KEY")]) 
+      Py_ast.PyCall (client_method, [], [("api_key", getenv_call  "GROK_API_KEY")]) 
       (* client = Client(api_key=os.getenv("GROK_API_KEY")) *)
 
 and func_with_resource func =
-  let params_to_names = List.map (fun (name, typ) -> name ) func.func_params in
+  let params_to_names = List.map (fun (name, _) -> name ) func.func_params in
 
   (* Find the data from the Resource object *)
   let params_with_resource = List.append params_to_names ["_resource"] in
@@ -87,7 +110,7 @@ and func_with_resource func =
   let provider = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "provider") in
   let max_tokens = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "max_tokens") in
   let client = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "client") in
-  let prompt = handle_prompt func.func_prompt in
+  let prompt = translate_prompt func.func_prompt in
 
   (*get all the statements for an ai call*)
   let gemini_call_statement = gemini_call max_tokens system_prompt model prompt client in
@@ -137,23 +160,23 @@ def code (some_input_text, prompt, _resource):
     return _result
 
 *)
-and handle_prompt (prompt : Typed_ast.prompt_part list) : Py_ast.py_expr =
-  let fstring = ref [] in
+and translate_prompt (prompt : Typed_ast.prompt_part list) : Py_ast.py_expr =
+  let fstring = List.map (fun part ->  
+    begin match part with
+  | Typed_ast.PromptText text -> (text, string_to_pystring "")
+  | Typed_ast.PromptHole expr ->  
+    let expr = Translate_expr.expr expr in
+    ("", expr);
+  end
+  ) prompt in
+  
+  Py_ast.PyFString ("", fstring)
 
-  List.iter (fun prompt_part -> 
-    match prompt_part with
-    | Typed_ast.PromptText text -> fstring := List.append !fstring [(text, string_to_pystring "")];
-    | Typed_ast.PromptHole expr -> 
-        let expr = Translate_expr.expr expr in
-         fstring := List.append !fstring [("", expr)];
-     ) prompt;
-
-  Py_ast.PyFString ("", !fstring)
-
+    
 and func_without_resource func =
   (* let params_to_names = List.map (fun (name, typ) -> name  ) func.func_params in
   Py_ast.PyFuncDef (func.name, params_to_names,) *)
-  raise Not_found
+  failwith "not implemented"
 
 
 and gemini_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (model: Py_ast.py_expr) (prompt: Py_ast.py_expr) (client: Py_ast.py_expr) : Py_ast.py_statement =
@@ -188,7 +211,7 @@ and antropic_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (
 
   let call = Py_ast.PyCall (create, [], params) in
 
-  let response_text = Py_ast.PyAttr (call, "text") in
+  let response_text = Py_ast.PyAttr (call, "content") in
 
   let assign_to_result = Py_ast.PyAssign ("_result", response_text) in
 
@@ -202,7 +225,7 @@ and antropic_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (
             "content": "Hello, Claude",
         }
     ],
-    model="claude-opus-4-7",)
+    model="claude-opus-4-7",).content
     *)
 
 and openai_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (model: Py_ast.py_expr) (prompt: Py_ast.py_expr) (client: Py_ast.py_expr) : Py_ast.py_statement =
@@ -226,15 +249,14 @@ and openai_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (mo
   *)
 
 and grok_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (model: Py_ast.py_expr) (prompt: Py_ast.py_expr) (client: Py_ast.py_expr) : Py_ast.py_statement list =
-  let statements : Py_ast.py_statement list = []  in
-
-  let chat = Py_ast.PyAttr (client, "chat") in
-  let create = Py_ast.PyAttr (chat, "create") in
+  let chat_field = Py_ast.PyAttr (client, "chat") in
+  let create = Py_ast.PyAttr (chat_field, "create") in
   
   let call_create = Py_ast.PyCall (create, [], ["model", model]) in
   
   let assign_chat = Py_ast.PyAssign ("_chat", call_create) in
-  let append = Py_ast.PyAttr (Py_ast.PyName "_chat","append") in
+  let chat = Py_ast.PyName "_chat" in
+  let append = Py_ast.PyAttr (chat,"append") in
   let grok_user = Py_ast.PyName "user" in
   let grok_system = Py_ast.PyName "system" in
   let user_call = Py_ast.PyCall (grok_user, [prompt],[]) in
@@ -250,7 +272,7 @@ and grok_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (mode
 
   let assign_to_result = Py_ast.PyAssign ("_result", response_text) in
   
-  List.append [assign_chat; Py_ast.PyExpr call_append_user; Py_ast.PyExpr call_append_system; assign_to_result] statements
+  [assign_chat; Py_ast.PyExpr call_append_user; Py_ast.PyExpr call_append_system; assign_to_result]
   (*
     chat = client.chat.create(model="grok-4.3")
     chat.append(system("You are Grok, a highly intelligent, helpful AI assistant."))
