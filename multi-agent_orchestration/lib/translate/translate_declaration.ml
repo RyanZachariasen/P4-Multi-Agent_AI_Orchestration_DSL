@@ -77,9 +77,9 @@ and getenv_call str =
 and get_correct_client (provider: Typed_ast.provider) : Py_ast.py_expr = 
   match  provider with
     | Typed_ast.Anthropic -> 
-      let antropic = Py_ast.PyName "antropic" in
-      let antropic_method = Py_ast.PyAttr (antropic, "Anthropic") in
-      Py_ast.PyCall (antropic_method, [], [("api_key", getenv_call "ANTROPIC_API_KEY")])
+      let anthropic = Py_ast.PyName "anthropic" in
+      let anthropic_method = Py_ast.PyAttr (anthropic, "Anthropic") in
+      Py_ast.PyCall (anthropic_method, [], [("api_key", getenv_call "ANTHROPIC_API_KEY")])
       (* client = anthropic.Anthropic(api_key="ANTROPIC_API_KEY") *)
 
     | Typed_ast.Gemini -> 
@@ -95,7 +95,7 @@ and get_correct_client (provider: Typed_ast.provider) : Py_ast.py_expr =
       (* client = OpenAI(api_key="OPENAI_API_KEY") *)
 
     | Typed_ast.Grok -> 
-      let client_method = Py_ast.PyName ("client") in
+      let client_method = Py_ast.PyName ("Client") in
       Py_ast.PyCall (client_method, [], [("api_key", getenv_call  "GROK_API_KEY")]) 
       (* client = Client(api_key=os.getenv("GROK_API_KEY")) *)
 
@@ -115,18 +115,18 @@ and func_with_resource func =
   (*get all the statements for an ai call*)
   let gemini_call_statement = gemini_call max_tokens system_prompt model prompt client in
   let openai_call_statement = openai_call max_tokens system_prompt model prompt client in
-  let anthropic_call_statement = antropic_call max_tokens system_prompt model prompt client in
+  let anthropic_call_statement = anthropic_call max_tokens system_prompt model prompt client in
   let grok_call_statements = grok_call max_tokens system_prompt model prompt client in
 
   (*If statements to choose correct AI*)
   let gemini_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "gemini"), [gemini_call_statement]) in
-  let antropic_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "anthropic"), [anthropic_call_statement]) in
+  let anthropic_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "anthropic"), [anthropic_call_statement]) in
   let grok_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "grok"), grok_call_statements) in
   let openai_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "openai"), [openai_call_statement]) in
 
   let return_statement = Py_ast.PyReturn (Py_ast.PyName "_result") in
 
-  let body = [gemini_if; antropic_if; grok_if; openai_if; return_statement] in
+  let body = [gemini_if; anthropic_if; grok_if; openai_if; return_statement] in
 
   Py_ast.PyFuncDef (func.func_name, params_with_resource, body)
 (*
@@ -137,7 +137,7 @@ def code (some_input_text, prompt, _resource):
 
 
 
-  if _resource.provider == 'antropic':
+  if _resource.provider == 'anthropic':
     _result = client.models.generate_content(
             model="gemini-3-flash-preview",
             config=types.GenerateContentConfig(system_instruction="You are a cat. Your name is Neko."),
@@ -162,12 +162,11 @@ def code (some_input_text, prompt, _resource):
 *)
 and translate_prompt (prompt : Typed_ast.prompt_part list) : Py_ast.py_expr =
   let fstring = List.map (fun part ->  
-    begin match part with
+    match part with
   | Typed_ast.PromptText text -> (text, string_to_pystring "")
   | Typed_ast.PromptHole expr ->  
     let expr = Translate_expr.expr expr in
     ("", expr);
-  end
   ) prompt in
   
   Py_ast.PyFString ("", fstring)
@@ -184,7 +183,7 @@ and gemini_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (mo
   let generate_content = Py_ast.PyAttr (models, "generate_content") in
 
   let generate_content_config = Py_ast.PyAttr (Py_ast.PyName "types", "GenerateContentConfig") in
-  let config = Py_ast.PyCall(generate_content_config, [], ["system_instruction", system_prompt]) in
+  let config = Py_ast.PyCall(generate_content_config, [], [("system_instruction", system_prompt)]) in
     
   let params = [("max_tokens", max_tokens); ("model", model); ("contents",  prompt); ("config", config)] in
 
@@ -201,7 +200,7 @@ and gemini_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (mo
             contents="Explain how AI works in a few words").text *)
 
 
-and antropic_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (model: Py_ast.py_expr) (prompt: Py_ast.py_expr) (client: Py_ast.py_expr) : Py_ast.py_statement =
+and anthropic_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (model: Py_ast.py_expr) (prompt: Py_ast.py_expr) (client: Py_ast.py_expr) : Py_ast.py_statement =
   let messages = Py_ast.PyAttr (client, "messages") in
   let create = Py_ast.PyAttr (messages, "create") in
   let user =  string_to_pystring "user" in
@@ -232,7 +231,7 @@ and openai_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (mo
   let responses = Py_ast.PyAttr (client, "responses") in
   let create = Py_ast.PyAttr (responses, "create") in
   
-  let params = [("model", model); ("input",  prompt);] in
+  let params = [("model", model); ("input",  prompt); ("instructions", system_prompt); ("max_output_tokens", max_tokens)] in
 
   let call = Py_ast.PyCall (create, [], params) in
 
@@ -252,7 +251,7 @@ and grok_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (mode
   let chat_field = Py_ast.PyAttr (client, "chat") in
   let create = Py_ast.PyAttr (chat_field, "create") in
   
-  let call_create = Py_ast.PyCall (create, [], ["model", model]) in
+  let call_create = Py_ast.PyCall (create, [], [("model", model)]) in
   
   let assign_chat = Py_ast.PyAssign ("_chat", call_create) in
   let chat = Py_ast.PyName "_chat" in
