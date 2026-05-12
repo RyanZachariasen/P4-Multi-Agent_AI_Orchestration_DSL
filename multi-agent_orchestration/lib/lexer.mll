@@ -10,7 +10,7 @@
     let h = Hashtbl.create 32 in
     List.iter (fun (s, tok) -> Hashtbl.add h s tok)
       [
-        "workflow", WORKFLOW; "Resource", RESOURCE; "func", FUNC; "type", TYPE;
+        "workflow", WORKFLOW; "Resource", RESOURCE; "func", FUNC; "Type", TYPE;
 
         "max_tokens", MAX_TOKENS; "system_prompt", SYSTEM_PROMPT;
 
