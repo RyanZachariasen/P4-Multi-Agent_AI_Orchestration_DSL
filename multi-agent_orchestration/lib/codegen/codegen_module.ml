@@ -1,8 +1,8 @@
 open Py_ast
 
 let rec codegen_module (modul: py_module) : bytes = 
-  let buffer = Buffer.create 100000 in
-
+  let buffer = Buffer.create 1000000 in
+  
   handle_imports modul.imports buffer;
   handle_body modul.body buffer;
   

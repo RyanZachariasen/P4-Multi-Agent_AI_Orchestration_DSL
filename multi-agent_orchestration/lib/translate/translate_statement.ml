@@ -15,7 +15,7 @@ let statement (stmt: statement) : py_statement =
     PyExpr read_call
     (*PyExpr (PyCall (PyAttr (PyCall (PyName "open", [Translate_expr.expr expr; PyConst (PyString "r")], []), "read"), [], []))*)
   
-    | SWriteFile (expr_1, expr_2) -> 
+  | SWriteFile (expr_1, expr_2) -> 
     let file = Translate_expr.expr expr_1 in
     let content_expr = Translate_expr.expr expr_2 in
     let open_call =PyCall (PyName "open", [file; PyConst (PyString "w")], []) in

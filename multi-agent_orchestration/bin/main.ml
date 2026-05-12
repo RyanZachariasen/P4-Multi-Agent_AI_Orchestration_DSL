@@ -65,12 +65,13 @@ let () =
       print_endline "Exiting in type only mode";
       exit 0);
 
-    let _module = Translate_program.program typed_program in
-
-    let _bytes = Codegen_module.codegen_module _module in
+    let py_module = Translate_program.program typed_program in
+    
+    let _bytes = Codegen_module.codegen_module py_module in
     let file_out_channel = open_out "output.py" in
 
     output_bytes file_out_channel _bytes;
+
     close_out file_out_channel;
     close_in file_in_channel;
   with

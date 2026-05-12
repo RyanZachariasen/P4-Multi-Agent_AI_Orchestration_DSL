@@ -14,17 +14,18 @@ and expr_node (node: Typed_ast.expr_node) : Py_ast.py_expr =
 
   | Typed_ast.ECall (name, expr_list, on_resource_option) -> raise Not_found
   
-  (* 
+  (*
   | Typed_ast.ECall (name, expr_list, on_resource_option) -> 
     let function_name = Py_ast.PyName name in
     let ecall_arguments = List.map expr expr_list in
-    match on_resource_option with
-    | None -> Py_ast.PyCall(function_name, ecall_arguments, ) what is last argument
+    begin match on_resource_option with
+    | None -> Py_ast.PyCall(function_name, ecall_arguments, [])
     | Some resource_name -> 
-      let ecall_arguments = ecall_arguments @ [Py_ast.PyName resource_name] in (* @ joins 2 lists *)
-      Py_ast.PyCall(function_name, ecall_arguments, ) what is last argument
+      let ecall_arguments = ecall_arguments @ [Py_ast.PyName resource_name] in
+      Py_ast.PyCall(function_name, ecall_arguments, [])
+    end
   *)
-  
+
   | Typed_ast.EField (expr_record, flield_name, typ) ->
     let py_expr = expr expr_record in
     Py_ast.PyAttr (py_expr, flield_name)

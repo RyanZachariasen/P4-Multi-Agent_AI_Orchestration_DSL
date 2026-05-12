@@ -210,6 +210,7 @@ and check_binop (opperand : Ast.binop) (expr_1 : Ast.expr) (expr_2 : Ast.expr) (
   | _, TFloat, TFloat -> TFloat
   | _, TFloat, TInt   -> TFloat
   | _, TInt,   TFloat -> TFloat
+  | Add, TText,   TText -> TText
   | Concat, _, _ -> error location "Concat requires Text operands"
   | _, typ1, typ2    -> error location ("Arithmetic requires numeric operands, got " ^
                      string_of_typ typ1 ^ " and " ^ string_of_typ typ2) in
