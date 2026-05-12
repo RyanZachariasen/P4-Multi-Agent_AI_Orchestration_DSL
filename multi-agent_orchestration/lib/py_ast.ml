@@ -6,7 +6,7 @@ type py_expr =
   | PyConst     of py_constant                         (* 42, "hello", True *)
   | PyCall      of py_expr * py_expr list * (string * py_expr) list (* f(args, key=val) *)
   | PyList      of py_expr list                         
-  | PyDict      of (string * py_expr) list                         
+  | PyDict      of (py_constant * py_expr) list                         
   | PyAttr      of py_expr * string                    (* response.content *)
   | PyBinOp     of py_binop * py_expr * py_expr        (* x + y *)
   | PySubscript of py_expr * py_expr                   (* x[0] *)

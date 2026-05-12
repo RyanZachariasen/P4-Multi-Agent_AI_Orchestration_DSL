@@ -1,5 +1,7 @@
-let rec codegen_module (modul: Py_ast.py_module) : bytes = 
-  let buffer = Buffer.create Sys.max_string_length in
+open Py_ast
+
+let rec codegen_module (modul: py_module) : bytes = 
+  let buffer = Buffer.create 100000 in
 
   handle_imports modul.imports buffer;
   handle_body modul.body buffer;
@@ -9,7 +11,7 @@ let rec codegen_module (modul: Py_ast.py_module) : bytes =
 and handle_imports imports buffer = 
   List.iter (fun x -> 
       match x with 
-      | Py_ast.PyImport import -> Buffer.add_string buffer ("import " ^ import ^ "\n")
+      | PyImport import -> Buffer.add_string buffer ("import " ^ import ^ "\n")
       | _ -> failwith "error generating module"
     ) imports;
 

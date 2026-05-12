@@ -1,3 +1,12 @@
-Resource agent1 = anthropic("claude-sonnet")
+Resource coder = anthropic("claude-sonnet")
+Resource reviewer = openai("gpt-4")
+Resource reviewer1 = grok("gpt-4")
+Resource reviewer2 = gemini("gpt-4")
+
+func code_something(input: Text) -> Code:
+    on Resource
+    """This is a prompt:$input$="""
+
 workflow:
     print("hello")
+
