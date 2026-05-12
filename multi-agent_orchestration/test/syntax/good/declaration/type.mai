@@ -1,4 +1,4 @@
-Type Cat = { name: Text, age: Int }
+Type Cat = { name: Text, age: int}
 
 Type Dog = { 
     name: Text, 
