@@ -31,7 +31,7 @@ let parse_file (filename : string) lexbuf : Ast.program =
 
 let typecheck_ast (ast: Ast.program) : Typed_ast.program = 
     let typed_ast = Typing.check_program ast in
-    Printf.printf "Successfully typechecked program!";
+    Printf.printf "Successfully typechecked program!\n";
     typed_ast;;
 
 
@@ -50,8 +50,8 @@ let get_compiler_mode (args : string array) : string option =
 let () =
   let filename = get_file_name Sys.argv in
   let compiler_mode = get_compiler_mode Sys.argv in
-  let file_channel = open_in filename in
-  let lexbuf = Lexing.from_channel file_channel in
+  let file_in_channel = open_in filename in
+  let lexbuf = Lexing.from_channel file_in_channel in
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = filename };
   try
     let ast = parse_file filename lexbuf in
@@ -59,13 +59,21 @@ let () =
       print_endline "Exiting in parse only mode";
       exit 0);
 
-    let _ = typecheck_ast ast in
+    let typed_program = typecheck_ast ast in
 
     if compiler_mode = Some "--type-only" then (
       print_endline "Exiting in type only mode";
       exit 0);
+
+    let py_module = Translate_program.program typed_program in
     
-      close_in file_channel;
+    let _bytes = Codegen_module.codegen_module py_module in
+    let file_out_channel = open_out "output.py" in
+
+    output_bytes file_out_channel _bytes;
+
+    close_out file_out_channel;
+    close_in file_in_channel;
   with
   | Lexer.Lexing_error error_message -> handle_lexer_error error_message lexbuf
   | Parser.Error -> handle_parser_error lexbuf

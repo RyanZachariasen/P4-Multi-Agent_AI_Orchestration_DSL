@@ -9,5 +9,6 @@
  (name multi_agent_orchestration)
  (public_name multi-agent_orchestration)
  (modules ast typed_ast lexer parser typing py_ast 
- translate_declaration translate_expr translate_program translate_statement translate_workflow)
+ translate_declaration translate_expr translate_program translate_statement translate_workflow
+ codegen_module codegen_expr codegen_statement)
 )

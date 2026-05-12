@@ -27,7 +27,7 @@ and expr =
   { expr_node: expr_node;
     expr_location: location}
 
-and expr_node = 
+and expr_node =
   | EVar of name
   | EConst of constant
   | ECall  of name * expr list * name option
@@ -44,8 +44,8 @@ type statement =
 and statement_node =  
   | SLet   of name * expr      (** x = f(y) on R *)  
   | SPrint of expr
-  | SWriteFile of expr * expr
-  | SReadFile of expr      (** write_file(path, content) *)  
+  | SWriteFile of expr * expr  (** write_file(path, content) *)  
+  | SReadFile of expr       
   
 type resource_declaration = {  
   resource_name: name;
