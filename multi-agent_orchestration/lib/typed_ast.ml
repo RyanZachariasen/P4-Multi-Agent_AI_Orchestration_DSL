@@ -20,7 +20,7 @@ type constant =
   | CFile  of string
   | CCustomType of name
 
-type binop = Add | Sub | Mul | Div | Concat
+type binop = Add | Sub | Mul | Div
 
 
 type expr = {

@@ -19,7 +19,7 @@
 
 %token LET WRITE_FILE READ_FILE PRINT
 
-%token PLUS MINUS TIMES DIV CONCAT
+%token PLUS MINUS TIMES DIV
 
 %token RESOURCE ANTHROPIC OPENAI GEMINI GROK
 
@@ -79,7 +79,7 @@ typ:
 | TINT {TInt}| TCODE {TCode} | TFLOAT {TFloat} | TBOOL {TBool}| TTEXT {TText}| TFILE {TFile} | ident = IDENT { TCustomType ident }
 
 operand:
-| PLUS {Add} | MINUS {Sub} |  TIMES {Mul} | DIV {Div} | CONCAT {Concat}
+| PLUS {Add} | MINUS {Sub} |  TIMES {Mul} | DIV {Div}
 
 constant:
 | const = INT { CInt const }

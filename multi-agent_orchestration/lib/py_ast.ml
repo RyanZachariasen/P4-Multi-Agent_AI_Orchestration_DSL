@@ -20,7 +20,7 @@ and py_constant =
   | PyString of string
   | PyNone
 
-and py_binop = PyAdd | PySub | PyMul | PyDiv | PyConcat
+and py_binop = PyAdd | PySub | PyMul | PyDiv
 
 type args = string list
 
