@@ -197,22 +197,19 @@ and check_binop (opperand : Ast.binop) (expr_1 : Ast.expr) (expr_2 : Ast.expr) (
     | Ast.Mul -> Mul
     | Ast.Div -> Div
     | Ast.Sub -> Sub
-    | Ast.Concat -> Concat
     in
 
   let result_typ = 
   match opperand, typed_expr_1.expr_typ, typed_expr_2.expr_typ with
-  | Concat, TText, TText -> TText
-  | Concat, TCode, TText -> TText
-  | Concat, TText, TCode -> TText
-  | Concat, TCode, TCode -> TText
+  | Add, TText, TText -> TText
+  | Add, TCode, TText -> TText
+  | Add, TText, TCode -> TText
+  | Add, TCode, TCode -> TText
   | _, TInt,   TInt   -> TInt
   | _, TFloat, TFloat -> TFloat
   | _, TFloat, TInt   -> TFloat
   | _, TInt,   TFloat -> TFloat
-  | Add, TText,   TText -> TText
-  | Concat, _, _ -> error location "Concat requires Text operands"
-  | _, typ1, typ2    -> error location ("Arithmetic requires numeric operands, got " ^
+  | _, typ1, typ2    -> error location ("Arithmetic requires compatible operands, got " ^
                      string_of_typ typ1 ^ " and " ^ string_of_typ typ2) in
     EBinOp (t_opperand, typed_expr_1, typed_expr_2), result_typ
   

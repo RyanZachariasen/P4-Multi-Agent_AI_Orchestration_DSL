@@ -35,7 +35,7 @@ and expr_node =
   | EBinOp  of binop * expr * expr
 
 
-and binop = Add | Sub | Mul | Div | Concat  
+and binop = Add | Sub | Mul | Div
 
 type statement = 
   {statement_node: statement_node;

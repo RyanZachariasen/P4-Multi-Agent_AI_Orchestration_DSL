@@ -46,4 +46,3 @@ and binop (binop: Typed_ast.binop) : Py_ast.py_binop =
   | Typed_ast.Sub -> Py_ast.PySub
   | Typed_ast.Mul -> Py_ast.PyMul
   | Typed_ast.Div -> Py_ast.PyDiv
-  | Typed_ast.Concat -> Py_ast.PyConcat

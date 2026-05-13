@@ -91,8 +91,6 @@ and binop (op : py_binop)(buffer: Buffer.t) =
 
   | PyDiv -> Buffer.add_string buffer " / ";
 
-  | PyConcat -> failwith "not implemented"
-
 and compare_operator (op : compare_operator) (buffer: Buffer.t) =
   match op with
   | Eq -> Buffer.add_string buffer " == ";
