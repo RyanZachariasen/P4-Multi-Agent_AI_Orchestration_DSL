@@ -11,7 +11,10 @@ and expr_node (node: Typed_ast.expr_node) : Py_ast.py_expr =
     let binop_expr_2 = expr expr_2 in
     let binop_opperation = binop opperation in
     Py_ast.PyBinOp (binop_opperation, binop_expr_1, binop_expr_2)
-
+  | Typed_ast.EReadFile path_expr ->
+    let file_arg = expr path_expr in
+    let open_call = Py_ast.PyCall (Py_ast.PyName "open", [file_arg; Py_ast.PyConst (Py_ast.PyString "r")], []) in
+    Py_ast.PyCall (Py_ast.PyAttr (open_call, "read"), [], [])
   | Typed_ast.ECall (name, expr_list, on_resource_option) -> raise Not_found
   
   (*
