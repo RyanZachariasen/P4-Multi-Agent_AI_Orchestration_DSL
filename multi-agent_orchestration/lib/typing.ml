@@ -121,7 +121,11 @@ and check_expr_node (node : Ast.expr_node) (location: Ast.location) delta gamma 
   | Ast.ECall (func_name, args, resource_optional) -> check_func_call func_name args resource_optional delta gamma alpha beta location
   | Ast.EField (e, field_name) -> check_field e field_name location delta gamma alpha beta
   | Ast.EBinOp (opperand, e1, e2) -> check_binop opperand e1 e2 location delta gamma alpha beta
-    
+  | Ast.EReadFile path_expr ->
+    let typed_path = expr path_expr delta gamma alpha beta in
+    if not (check_subtype typed_path.expr_typ TText) then
+      type_mismatch location typed_path.expr_typ TText;
+    EReadFile typed_path, TText
 and check_constant (const: Ast.constant) delta (location: Ast.location) : expr_node * typ = 
   let const, typ = match const with
       | Ast.CText  text           -> CText text, TText
@@ -236,11 +240,7 @@ and check_statement_node (node: Ast.statement_node) (location: Ast.location) del
       type_mismatch location typed_content.expr_typ TText;
     SWriteFile (typed_path, typed_content)
 
-  | Ast.SReadFile path_expr ->
-    let typed_path = expr path_expr delta gamma alpha beta in
-    if not (check_subtype typed_path.expr_typ TFile) then
-      type_mismatch location typed_path.expr_typ TFile;
-    SReadFile typed_path
+
 
 and check_prompt_holes (func : Ast.func_declaration) delta gamma alpha beta: prompt_part list =
   let gamma_local : variable_env = Hashtbl.create (List.length func.func_params) in
