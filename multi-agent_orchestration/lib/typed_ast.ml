@@ -34,7 +34,7 @@ and expr_node =
   | ECall  of name * expr list * name option
   | EField of expr * name * typ
   | EBinOp of binop * expr * expr
-
+  | EReadFile of expr
 
 and resource_declaration = {
   resource_name:     name;
@@ -48,7 +48,6 @@ type statement =
   | SLet       of name * typ * expr
   | SPrint     of expr
   | SWriteFile of expr * expr
-  | SReadFile  of expr
 
 
 type prompt_part =

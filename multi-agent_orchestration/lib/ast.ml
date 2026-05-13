@@ -33,6 +33,7 @@ and expr_node =
   | ECall  of name * expr list * name option
   | EField  of expr * name   (** verdict.score *)
   | EBinOp  of binop * expr * expr
+  | EReadFile of expr       
 
 
 and binop = Add | Sub | Mul | Div
@@ -44,8 +45,7 @@ type statement =
 and statement_node =  
   | SLet   of name * expr      (** x = f(y) on R *)  
   | SPrint of expr
-  | SWriteFile of expr * expr  (** write_file(path, content) *)  
-  | SReadFile of expr       
+  | SWriteFile of expr * expr  (** write_file(path, content) *)      
   
 type resource_declaration = {  
   resource_name: name;

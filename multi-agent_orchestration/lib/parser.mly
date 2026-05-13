@@ -73,6 +73,7 @@ expr_node:
     { ECall (ident, List.map (fun e -> e) args, Some r) }
 | expr_1 = expr; DOT; ident = IDENT { EField (expr_1, ident) }
 | expr_1 = expr; operand = operand; expr_2 = expr { EBinOp (operand, expr_1, expr_2)}
+| READ_FILE ; LPAREN ; arg = expr ; RPAREN { EReadFile arg }
 ;
 
 typ: 
@@ -114,15 +115,6 @@ stmt_node:
           col  = $startpos.pos_cnum - $startpos.pos_bol;
         };
     }, expr)}
-| READ_FILE ; LPAREN ; file = FILE ; RPAREN { 
-    SReadFile {
-      expr_node= EConst (CFile file);
-      expr_location = {
-          file = $startpos.pos_fname;
-          line = $startpos.pos_lnum;
-          col  = $startpos.pos_cnum - $startpos.pos_bol;
-      };
-    } } 
 
 declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN ; NEWLINE { 
