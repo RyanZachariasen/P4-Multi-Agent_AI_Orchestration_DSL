@@ -13,7 +13,7 @@ let rec statement (stmt: py_statement) (buffer: Buffer.t) (indent: string) =
 
   
   | PyReturn expr ->
-    Buffer.add_string buffer (indent ^ "return ");
+    Buffer.add_string buffer ("return ");
     Codegen_expr.expression expr buffer;
     Buffer.add_string buffer ("\n");
 
@@ -24,32 +24,32 @@ let rec statement (stmt: py_statement) (buffer: Buffer.t) (indent: string) =
     
     Buffer.add_string buffer ("(" ^ args_string ^"):\n");
     List.iter (fun s ->
+          Buffer.add_string buffer (indent^"\t");
           statement s buffer (indent^"\t");
     ) body;
       Buffer.add_string buffer ("\n");
   
   | PyImport module_name ->
-    Buffer.add_string buffer ("import " ^ module_name ^ "\n")
+    Buffer.add_string buffer ("import " ^ module_name)
 
   | PyImportFrom (module_name, names) ->
-    let names_string = String.concat ", " names in
-    Buffer.add_string buffer ("from " ^ module_name ^ " import " ^ names_string ^ "\n")
+    let names_string = String.concat "," names in
+    Buffer.add_string buffer ("from " ^ module_name  ^ " import " ^ names_string ^"\n")
 
   | PyClassDef (class_name, base_class, fields) ->
-      Buffer.add_string buffer ("class " ^ class_name ^ "(" ^ base_class ^ "):\n");
-      List.iter (fun (name, typ) -> 
-            Buffer.add_string buffer (indent ^ "\t" ^ name ^ ": " ^ typ ^ "\n");
-      ) fields;
-      Buffer.add_string buffer ("\n");   
+    Buffer.add_string buffer ("class " ^ class_name ^"(BaseModel):\n");
+
+    List.iter (fun (name, typ) -> 
+          Buffer.add_string buffer (indent ^ "\t" ^ name ^": "^ typ ^ "\n");
+    ) fields;
   
   | PyIf (expr, body) -> 
-      Buffer.add_string buffer (indent ^ "if ");
-      Codegen_expr.expression expr buffer;
-      Buffer.add_string buffer (":\n");
-      List.iter (fun (s) ->
-          statement s buffer (indent ^ "\t");
-      ) body;
-      Buffer.add_string buffer ("\n");
+    Buffer.add_string buffer ("if ");
+    Codegen_expr.expression expr buffer;
+    Buffer.add_string buffer (":\n");
+    List.iter (fun (s) ->
+        statement s buffer (indent ^ "\t");
+    ) body;
 
   | PyIfElse (expr, if_body, else_body) -> 
       Buffer.add_string buffer ("if ");
@@ -62,4 +62,3 @@ let rec statement (stmt: py_statement) (buffer: Buffer.t) (indent: string) =
       List.iter (fun (s) ->
           statement s buffer (indent ^ "\t");
       ) else_body;
-      Buffer.add_string buffer ("\n");
