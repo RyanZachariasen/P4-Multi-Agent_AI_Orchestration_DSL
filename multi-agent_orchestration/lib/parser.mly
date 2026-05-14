@@ -142,7 +142,7 @@ declaration:
   }
 | TYPE; ident = IDENT; ASSIGN; LBRACE;
   fields = separated_list(COMMA, custom_type_field);
-  RBRACE;
+  RBRACE; NEWLINE?
   {
     DCustomType {
       type_name = ident;

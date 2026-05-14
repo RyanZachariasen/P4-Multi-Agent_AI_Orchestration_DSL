@@ -1,0 +1,6 @@
+
+Type Cat = { name: Text, friend: Text, age: int, castrated: bool, info_file: File}
+Type Dog = { name: Text, friend: Cat}
+
+workflow:
+    x=10

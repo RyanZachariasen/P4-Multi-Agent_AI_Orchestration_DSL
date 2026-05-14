@@ -1,3 +1,6 @@
-Resource agent1 = anthropic("claude-sonnet")
+func improve_code(input_code: Code) -> Code:
+    on Resource
+    """Improve this code $input_code$"""
+
 workflow:
-    print("hello")
+    x = improve_code("<html> </html>")

@@ -37,7 +37,8 @@ let rec statement (stmt: py_statement) (buffer: Buffer.t) (indent: string) =
     Buffer.add_string buffer ("from" ^ module_name  ^ "import" ^ names_string ^"\n")
 
   | PyClassDef (class_name, base_class, fields) ->
-    Buffer.add_string buffer "class (BaseModel):\n" ;
+    Buffer.add_string buffer ("class " ^ class_name ^"(BaseModel):\n");
+
     List.iter (fun (name, typ) -> 
           Buffer.add_string buffer (indent ^ "\t" ^ name ^": "^ typ ^ "\n");
     ) fields;

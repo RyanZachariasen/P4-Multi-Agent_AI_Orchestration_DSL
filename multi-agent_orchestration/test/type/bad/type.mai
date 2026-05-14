@@ -1,0 +1,5 @@
+
+Type Cat = { name: hasdkjfl}
+
+workflow:
+    x=10
