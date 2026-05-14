@@ -1,7 +1,7 @@
 
 Type Cat = { name: Text, age: int}
 
-Type Csa = { name: Text, friend: int}
+Type Dog = { name: Text, friend: Cat, castrated: Bool}
 
 workflow:
     x=10

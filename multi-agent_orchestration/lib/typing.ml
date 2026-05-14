@@ -76,8 +76,9 @@ and check_declaration (decl : Ast.declaration) delta gamma alpha beta : declarat
     | Ast.DCustomType ct ->
       if Hashtbl.mem delta ct.type_name then
         duplicate_declaration ct.type_location ct.type_name;
+        
+      let typed_fields = List.map (fun (name, typ) -> (name, (convert_type typ delta ct.type_location))) ct.type_fields in
 
-      let typed_fields = List.map (fun (name, typ) -> (name, convert_type typ delta )) ct.type_fields in
       let typed_ct = {
         type_name     = ct.type_name;
         type_fields   = typed_fields;
@@ -96,12 +97,12 @@ and check_func_declaration (func: Ast.func_declaration) delta gamma alpha beta =
   if Hashtbl.mem alpha func.func_name then
           duplicate_declaration func.func_location func.func_name;
         let typed_prompt = check_prompt_holes func delta gamma alpha beta in
-        let typed_params = List.map (fun (name, param) -> (name, convert_type param delta)) func.func_params in
+        let typed_params = List.map (fun (name, param) -> (name, convert_type param delta func.func_location)) func.func_params in
 
         let typed_f = {
           func_name          = func.func_name;
           func_params        = typed_params;
-          func_return        = convert_type func.func_return delta;
+          func_return        = convert_type func.func_return delta func.func_location;
           func_needs_resource = func.func_needs_resource;
           func_prompt        = typed_prompt;
         } in
@@ -249,16 +250,17 @@ and check_statement_node (node: Ast.statement_node) (location: Ast.location) del
 and check_prompt_holes (func : Ast.func_declaration) delta gamma alpha beta: prompt_part list =
   let gamma_local : variable_env = Hashtbl.create (List.length func.func_params) in
 
-  List.iter (fun (p, t) -> Hashtbl.add gamma_local p (convert_type t delta)) func.func_params;
+  List.iter (fun (p, t) -> Hashtbl.add gamma_local p (convert_type t delta func.func_location)) func.func_params;
   List.map (function
     | Ast.PromptText s -> PromptText s
     | Ast.PromptHole e -> PromptHole (expr e delta gamma_local alpha beta))
     func.func_prompt
-and convert_type (typ : Ast.typ) delta: typ  = 
+
+and convert_type (typ : Ast.typ) delta location: typ  = 
   match typ with 
   | Ast.TText -> TText
   | Ast.TBool -> TBool
-  | Ast.TCustomType n-> if (Hashtbl.mem delta n) then TCustomType n else failwith "error"
+  | Ast.TCustomType n -> if (Hashtbl.mem delta n) then TCustomType n else unbound_type location n
   | Ast.TCode -> TCode
   | Ast.TInt -> TInt
   | Ast.TFloat -> TFloat
