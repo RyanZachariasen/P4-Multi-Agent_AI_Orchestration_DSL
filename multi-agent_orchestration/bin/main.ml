@@ -78,4 +78,3 @@ let () =
   | Lexer.Lexing_error error_message -> handle_lexer_error error_message lexbuf
   | Parser.Error -> handle_parser_error lexbuf
   | Typing.Type_error (location, error_message) -> handle_type_error location error_message
-  | Not_found -> Printf.eprintf "Not_found error in translate/codegen\n"; exit 1
