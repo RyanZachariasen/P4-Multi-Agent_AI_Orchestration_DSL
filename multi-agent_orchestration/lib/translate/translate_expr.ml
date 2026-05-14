@@ -16,7 +16,6 @@ and expr_node (node: Typed_ast.expr_node) : Py_ast.py_expr =
     let file_arg = expr path_expr in
     let open_call = Py_ast.PyCall (Py_ast.PyName "open", [file_arg; Py_ast.PyConst (Py_ast.PyString "r")], []) in
     Py_ast.PyCall (Py_ast.PyAttr (open_call, "read"), [], [])
-  | Typed_ast.ECall (name, expr_list, on_resource_option) -> raise Not_found
 
   | Typed_ast.EField (expr_record, flield_name, typ) ->
     let py_expr = expr expr_record in
