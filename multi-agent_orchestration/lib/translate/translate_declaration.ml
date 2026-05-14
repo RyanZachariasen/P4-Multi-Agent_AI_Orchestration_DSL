@@ -164,16 +164,47 @@ def code (some_input_text, prompt, _resource):
     return _result
 
 *)
+and split_prompt (text : string) : (string * Py_ast.py_expr) list =
+  let regex = Str.regexp "{\\([^}]+\\)}" in
+  Printf.printf "Splitting: '%s'\n%!" text;
+  let rec find pos =
+    match Str.search_forward regex text pos with
+    | exception Not_found ->
+        let rest = String.sub text pos (String.length text - pos) in
+        Printf.printf "Text part: '%s'\n%!" rest;
+        if rest = "" then []
+        else [(rest, Py_ast.PyConst Py_ast.PyNone)]
+    | hole_start ->
+        let before = String.sub text pos (hole_start - pos) in
+        let var_name = Str.matched_group 1 text in
+        Printf.printf "Before: '%s', Hole: '%s'\n%!" before var_name;
+        let after_pos = Str.match_end () in
+        (before, Py_ast.PyName var_name) :: find after_pos
+  in
+  find 0
+
 and translate_prompt (prompt : Typed_ast.prompt_part list) : Py_ast.py_expr =
-  let fstring = List.map (fun part ->  
-    match part with
-  | Typed_ast.PromptText text -> (text, string_to_pystring "")
-  | Typed_ast.PromptHole expr ->  
-    let expr = Translate_expr.expr expr in
-    ("", expr);
-  ) prompt in
-  
-  Py_ast.PyFString ("", fstring)
+  Printf.printf "translate_prompt called with %d parts\n%!" (List.length prompt);
+  List.iter (fun part -> match part with
+    | Typed_ast.PromptText text -> Printf.printf "Part: PromptText '%s'\n%!" text
+    | Typed_ast.PromptHole _ -> Printf.printf "Part: PromptHole\n%!"
+  ) prompt;
+  match prompt with
+  | [Typed_ast.PromptText text] ->
+      Printf.printf "Single PromptText: '%s'\n%!" text;
+      Py_ast.PyFString ("", split_prompt text)
+  | _ ->
+      Printf.printf "Hitting _ case\n%!";
+      let rec build = function
+        | [] -> []
+        | Typed_ast.PromptText text :: Typed_ast.PromptHole expr :: rest ->
+            (text, Translate_expr.expr expr) :: build rest
+        | Typed_ast.PromptText text :: rest ->
+            (text, Py_ast.PyConst Py_ast.PyNone) :: build rest
+        | Typed_ast.PromptHole expr :: rest ->
+            ("", Translate_expr.expr expr) :: build rest
+      in
+      Py_ast.PyFString ("", build prompt)
 
     
 and func_without_resource func =

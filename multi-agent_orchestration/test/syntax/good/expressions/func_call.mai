@@ -1,6 +1,6 @@
 Resource coding_agent = anthropic("claude-sonnet")
 
-func code(input: Code) -> Code:
+func code(input: Text) -> Code:
     on Resource
     """ Code this program: {input}"""
 

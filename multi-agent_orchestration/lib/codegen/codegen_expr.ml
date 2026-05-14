@@ -52,15 +52,17 @@ let rec expression (expr : py_expr) (buffer: Buffer.t) : unit =
     Buffer.add_char buffer ']';
 
   | PyFString (prefix, holes) ->
-    Buffer.add_string buffer ("f\"" ^prefix);
-    List.iter (fun (str, hole) -> 
-            Buffer.add_string buffer str;
-            Buffer.add_char buffer '{';
-            expression hole buffer;
-            Buffer.add_char buffer '}';
-            
-        ) holes;
-    Buffer.add_char buffer '\"';
+      Buffer.add_string buffer ("f\"" ^ prefix);
+      List.iter (fun (str, hole) -> 
+          Buffer.add_string buffer str;
+          (match hole with
+          | Py_ast.PyConst Py_ast.PyNone -> ()
+          | _ ->
+              Buffer.add_char buffer '{';
+              expression hole buffer;
+              Buffer.add_char buffer '}');
+      ) holes;
+      Buffer.add_char buffer '\"';
 
   | PyCompare (left, op, right) ->
     expression left buffer;
