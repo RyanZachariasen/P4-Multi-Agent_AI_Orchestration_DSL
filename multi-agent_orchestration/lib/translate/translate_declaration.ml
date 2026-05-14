@@ -99,8 +99,8 @@ and get_correct_client (provider: Typed_ast.provider) : Py_ast.py_expr =
       (* client = OpenAI(api_key="OPENAI_API_KEY") *)
 
     | Typed_ast.Grok -> 
-        let client_method = Py_ast.PyName "Client" in
-        Py_ast.PyCall (client_method, [], [("api_key", getenv_call "XAI_API_KEY")])
+      let client_method = Py_ast.PyName ("Client") in
+      Py_ast.PyCall (client_method, [], [("api_key", getenv_call  "GROK_API_KEY")]) 
       (* client = Client(api_key=os.getenv("GROK_API_KEY")) *)
 
 and func_with_resource func =
@@ -109,11 +109,11 @@ and func_with_resource func =
   (* Find the data from the Resource object *)
   let params_with_resource = List.append params_to_names ["_resource"] in
 
-  let system_prompt = Py_ast.PySubscript (Py_ast.PyName "_resource", Py_ast.PyConst (Py_ast.PyString "system_prompt")) in
-  let model = Py_ast.PySubscript (Py_ast.PyName "_resource", Py_ast.PyConst (Py_ast.PyString "model")) in
-  let provider = Py_ast.PySubscript (Py_ast.PyName "_resource", Py_ast.PyConst (Py_ast.PyString "provider")) in
-  let max_tokens = Py_ast.PySubscript (Py_ast.PyName "_resource", Py_ast.PyConst (Py_ast.PyString "max_tokens")) in
-  let client = Py_ast.PySubscript (Py_ast.PyName "_resource", Py_ast.PyConst (Py_ast.PyString "client")) in
+  let system_prompt = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "system_prompt") in
+  let model = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "model") in
+  let provider = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "provider") in
+  let max_tokens = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "max_tokens") in
+  let client = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "client") in
   let prompt = translate_prompt func.func_prompt in
 
   (*get all the statements for an ai call*)
@@ -164,47 +164,16 @@ def code (some_input_text, prompt, _resource):
     return _result
 
 *)
-and split_prompt (text : string) : (string * Py_ast.py_expr) list =
-  let regex = Str.regexp "{\\([^}]+\\)}" in
-  Printf.printf "Splitting: '%s'\n%!" text;
-  let rec find pos =
-    match Str.search_forward regex text pos with
-    | exception Not_found ->
-        let rest = String.sub text pos (String.length text - pos) in
-        Printf.printf "Text part: '%s'\n%!" rest;
-        if rest = "" then []
-        else [(rest, Py_ast.PyConst Py_ast.PyNone)]
-    | hole_start ->
-        let before = String.sub text pos (hole_start - pos) in
-        let var_name = Str.matched_group 1 text in
-        Printf.printf "Before: '%s', Hole: '%s'\n%!" before var_name;
-        let after_pos = Str.match_end () in
-        (before, Py_ast.PyName var_name) :: find after_pos
-  in
-  find 0
-
 and translate_prompt (prompt : Typed_ast.prompt_part list) : Py_ast.py_expr =
-  Printf.printf "translate_prompt called with %d parts\n%!" (List.length prompt);
-  List.iter (fun part -> match part with
-    | Typed_ast.PromptText text -> Printf.printf "Part: PromptText '%s'\n%!" text
-    | Typed_ast.PromptHole _ -> Printf.printf "Part: PromptHole\n%!"
-  ) prompt;
-  match prompt with
-  | [Typed_ast.PromptText text] ->
-      Printf.printf "Single PromptText: '%s'\n%!" text;
-      Py_ast.PyFString ("", split_prompt text)
-  | _ ->
-      Printf.printf "Hitting _ case\n%!";
-      let rec build = function
-        | [] -> []
-        | Typed_ast.PromptText text :: Typed_ast.PromptHole expr :: rest ->
-            (text, Translate_expr.expr expr) :: build rest
-        | Typed_ast.PromptText text :: rest ->
-            (text, Py_ast.PyConst Py_ast.PyNone) :: build rest
-        | Typed_ast.PromptHole expr :: rest ->
-            ("", Translate_expr.expr expr) :: build rest
-      in
-      Py_ast.PyFString ("", build prompt)
+  let fstring = List.map (fun part ->  
+    match part with
+  | Typed_ast.PromptText text -> (text, string_to_pystring "")
+  | Typed_ast.PromptHole expr ->  
+    let expr = Translate_expr.expr expr in
+    ("", expr);
+  ) prompt in
+  
+  Py_ast.PyFString ("", fstring)
 
     
 and func_without_resource func =
