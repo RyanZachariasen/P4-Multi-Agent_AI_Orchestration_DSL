@@ -2,9 +2,10 @@
 # This will catch _build in the root or in subfolders
 _build/
 *.install
+output.py
 *.exe
 .merlin
-
+example.mai
 # --- Local Opam switches ---
 _opam/
 
