@@ -99,8 +99,8 @@ and get_correct_client (provider: Typed_ast.provider) : Py_ast.py_expr =
       (* client = OpenAI(api_key="OPENAI_API_KEY") *)
 
     | Typed_ast.Grok -> 
-      let client_method = Py_ast.PyName ("Client") in
-      Py_ast.PyCall (client_method, [], [("api_key", getenv_call  "GROK_API_KEY")]) 
+        let client_method = Py_ast.PyName "Client" in
+        Py_ast.PyCall (client_method, [], [("api_key", getenv_call "XAI_API_KEY")])
       (* client = Client(api_key=os.getenv("GROK_API_KEY")) *)
 
 and func_with_resource func =
@@ -109,11 +109,11 @@ and func_with_resource func =
   (* Find the data from the Resource object *)
   let params_with_resource = List.append params_to_names ["_resource"] in
 
-  let system_prompt = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "system_prompt") in
-  let model = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "model") in
-  let provider = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "provider") in
-  let max_tokens = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "max_tokens") in
-  let client = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "client") in
+  let system_prompt = Py_ast.PySubscript (Py_ast.PyName "_resource", Py_ast.PyConst (Py_ast.PyString "system_prompt")) in
+  let model = Py_ast.PySubscript (Py_ast.PyName "_resource", Py_ast.PyConst (Py_ast.PyString "model")) in
+  let provider = Py_ast.PySubscript (Py_ast.PyName "_resource", Py_ast.PyConst (Py_ast.PyString "provider")) in
+  let max_tokens = Py_ast.PySubscript (Py_ast.PyName "_resource", Py_ast.PyConst (Py_ast.PyString "max_tokens")) in
+  let client = Py_ast.PySubscript (Py_ast.PyName "_resource", Py_ast.PyConst (Py_ast.PyString "client")) in
   let prompt = translate_prompt func.func_prompt in
 
   (*get all the statements for an ai call*)

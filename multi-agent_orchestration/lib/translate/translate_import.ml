@@ -13,12 +13,14 @@ let collect_imports (prog : Typed_ast.program) : py_statement list =
 
     (* resource → provider import *)
     | DResource r -> 
-        add (PyImport "os");    (* add os import! *)
+        add (PyImport "os");
         (match r.resource_provider with
         | Anthropic -> add (PyImport "anthropic")
         | OpenAI    -> add (PyImportFrom("openai", ["OpenAI"]))
         | Gemini    -> add (PyImportFrom("google", ["genai"]))
-        | Grok      -> add (PyImport "groq"))
+        | Grok -> 
+            add (PyImportFrom("xai_sdk", ["Client"]));
+            add (PyImportFrom("xai_sdk.chat", ["user"; "system"])))
 
     (* type declaration → pydantic *)
     | DCustomType _ ->
