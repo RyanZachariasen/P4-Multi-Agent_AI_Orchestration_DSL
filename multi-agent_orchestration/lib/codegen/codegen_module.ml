@@ -1,26 +1,19 @@
 open Py_ast
 
-let rec codegen_module (modul: py_module) : bytes = 
-  let buffer = Buffer.create 1000000 in
+let rec codegen_module (modul: py_module) (output_file : out_channel) = 
   
-  handle_imports modul.imports buffer;
-  handle_body modul.body buffer;
+  handle_imports modul.imports output_file;
+  handle_body modul.body output_file;
   
-  Buffer.to_bytes buffer
-
-and handle_imports imports buffer = 
+and handle_imports imports output_file = 
   List.iter (fun x -> 
       match x with 
-      | PyImport import -> 
-          Buffer.add_string buffer ("import " ^ import ^ "\n")
-      | PyImportFrom (module_name, names) ->
-          let names_string = String.concat ", " names in
-          Buffer.add_string buffer ("from " ^ module_name ^ " import " ^ names_string ^ "\n")
+      | PyImport import -> output_string output_file ("import " ^ import ^ "\n")
       | _ -> failwith "error generating module"
     ) imports;
 
-and handle_body statements buffer = 
+and handle_body statements output_file = 
   List.iter (fun statement ->
-    Codegen_statement.statement statement buffer ""
+    Codegen_statement.statement statement output_file ""
   ) statements;
   

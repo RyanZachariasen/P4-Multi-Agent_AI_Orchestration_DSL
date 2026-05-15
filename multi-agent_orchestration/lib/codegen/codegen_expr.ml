@@ -1,114 +1,114 @@
 open Py_ast
 
-let rec expression (expr : py_expr) (buffer: Buffer.t) : unit =
+let rec expression (expr : py_expr) (output_file: out_channel) : unit =
   match expr with
-  | PyName name -> Buffer.add_string buffer name;
+  | PyName name -> output_string output_file name;
 
-  | PyConst const -> constant const buffer;
+  | PyConst const -> constant const output_file;
 
   | PyCall (func, args, kwargs) ->
-    expression func buffer;
-    Buffer.add_string buffer "(";
+    expression func output_file;
+    output_string output_file "(";
     List.iter (fun arg -> 
-        expression arg buffer;
-        Buffer.add_string buffer ",";
+        expression arg output_file;
+        output_string output_file ",";
     ) args;
     List.iter (fun (name, arg) -> 
-        Buffer.add_string buffer (name^"=");
-        expression arg buffer;
-        Buffer.add_string buffer ",";
+        output_string output_file (name^"=");
+        expression arg output_file;
+        output_string output_file ",";
     ) kwargs;
-    Buffer.add_string buffer ")";
+    output_string output_file ")";
 
   | PyList items ->
-    Buffer.add_string buffer "[";
-    List.iter (fun arg -> expression arg buffer) items;
-    Buffer.add_string buffer ", ";
-    Buffer.add_string buffer "]";
+    output_string output_file "[";
+    List.iter (fun arg -> expression arg output_file) items;
+    output_string output_file ", ";
+    output_string output_file "]";
 
   | PyDict fields ->
-    Buffer.add_string buffer "{";
+    output_string output_file "{";
     List.iter (fun (key, value) ->
-        constant key buffer;
-        Buffer.add_string buffer (":");
-        expression value buffer;
-        Buffer.add_string buffer ", ")
+        constant key output_file;
+        output_string output_file (":");
+        expression value output_file;
+        output_string output_file ", ")
         fields;
-    Buffer.add_string buffer "}";
+    output_string output_file "}";
 
   | PyAttr (value, attr) ->
-    expression value buffer;
-    Buffer.add_string buffer ("." ^ attr) 
+    expression value output_file;
+    output_string output_file ("." ^ attr) 
 
   | PyBinOp (op, left, right) ->
-    expression left buffer;
-    binop op buffer;
-    expression right buffer;
+    expression left output_file;
+    binop op output_file;
+    expression right output_file;
 
   | PySubscript (value, index) ->
-    expression value buffer;
-    Buffer.add_char buffer '[';
-    expression index buffer;
-    Buffer.add_char buffer ']';
+    expression value output_file;
+    output_char output_file '[';
+    expression index output_file;
+    output_char output_file ']';
 
   | PyFString (prefix, holes) ->
-    Buffer.add_string buffer ("f\"" ^prefix);
+    output_string output_file ("f\"" ^prefix);
     List.iter (fun (str, hole) -> 
-            Buffer.add_string buffer str;
-            Buffer.add_char buffer '{';
-            expression hole buffer;
-            Buffer.add_char buffer '}';
+            output_string output_file str;
+            output_char output_file '{';
+            expression hole output_file;
+            output_char output_file '}';
             
         ) holes;
-    Buffer.add_char buffer '\"';
+    output_char output_file '\"';
 
   | PyCompare (left, op, right) ->
-    expression left buffer;
-    compare_operator op buffer;
-    expression right buffer;
+    expression left output_file;
+    compare_operator op output_file;
+    expression right output_file;
 
-and constant (const : py_constant) (buffer: Buffer.t) =
+and constant (const : py_constant) (output_file: out_channel) =
   match const with
-  | PyInt n -> Buffer.add_string buffer (Int.to_string n)
+  | PyInt n -> output_string output_file (Int.to_string n)
 
-  | PyFloat f -> Buffer.add_string buffer (Float.to_string f)
+  | PyFloat f -> output_string output_file (Float.to_string f)
  
   | PyBool b -> 
-    if b then Buffer.add_string buffer "True"
-    else Buffer.add_string buffer "False"
+    if b then output_string output_file "True"
+    else output_string output_file "False"
 
-  | PyString s -> Buffer.add_string buffer ("\"" ^ s ^ "\"")
+  | PyString s -> output_string output_file ("\"" ^ s ^ "\"")
 
-  | PyNone -> Buffer.add_string buffer "None"
+  | PyNone -> output_string output_file "None"
 
-and binop (op : py_binop)(buffer: Buffer.t) =
+and binop (op : py_binop)(output_file: out_channel) =
   match op with
-  | PyAdd -> Buffer.add_string buffer " + ";
+  | PyAdd -> output_string output_file " + ";
 
-  | PySub -> Buffer.add_string buffer " - ";
+  | PySub -> output_string output_file " - ";
 
-  | PyMul -> Buffer.add_string buffer " * ";
+  | PyMul -> output_string output_file " * ";
 
-  | PyDiv -> Buffer.add_string buffer " / ";
+  | PyDiv -> output_string output_file " / ";
 
-and compare_operator (op : compare_operator) (buffer: Buffer.t) =
+and compare_operator (op : compare_operator) (output_file: out_channel) =
   match op with
-  | Eq -> Buffer.add_string buffer " == ";
+  | Eq -> output_string output_file " == ";
 
-  | NotEq -> Buffer.add_string buffer " != ";
+  | NotEq -> output_string output_file " != ";
 
-  | Lt -> Buffer.add_string buffer " < ";
+  | Lt -> output_string output_file " < ";
 
-  | LtE -> Buffer.add_string buffer " <= ";
+  | LtE -> output_string output_file " <= ";
 
-  | Gt -> Buffer.add_string buffer " > ";
+  | Gt -> output_string output_file " > ";
 
-  | GtE -> Buffer.add_string buffer " >= ";
+  | GtE -> output_string output_file " >= ";
 
-  | Is -> Buffer.add_string buffer " is ";
+  | Is -> output_string output_file " is ";
 
-  | IsNot -> Buffer.add_string buffer " is not ";
+  | IsNot -> output_string output_file " is not ";
 
-  | In -> Buffer.add_string buffer " in ";
+  | In -> output_string output_file " in ";
 
-  | NotIn -> Buffer.add_string buffer " not in ";
+  | NotIn -> output_string output_file " not in ";

@@ -1,64 +1,63 @@
 open Py_ast
-let rec statement (stmt: py_statement) (buffer: Buffer.t) (indent: string) = 
+let rec statement (stmt: py_statement) (output_file: out_channel) (indent: string) = 
   match stmt with
   | PyAssign (name, expr) ->
-    Buffer.add_string buffer (indent ^ name ^ " = ");
-    Codegen_expr.expression expr buffer;
-    Buffer.add_string buffer ("\n");
+    output_string output_file (indent ^ name ^ " = ");
+    Codegen_expr.expression expr output_file;
+    output_string output_file ("\n");
   
   | PyExpr expr -> 
-    Buffer.add_string buffer (indent);
-    Codegen_expr.expression expr buffer;     
-    Buffer.add_string buffer ("\n");
+    output_string output_file (indent);
+    Codegen_expr.expression expr output_file;     
+    output_string output_file ("\n");
 
   
   | PyReturn expr ->
-    Buffer.add_string buffer ("return ");
-    Codegen_expr.expression expr buffer;
-    Buffer.add_string buffer ("\n");
+    output_string output_file ("return ");
+    Codegen_expr.expression expr output_file;
+    output_string output_file ("\n");
 
   | PyFuncDef (name, args, body) ->
-    Buffer.add_string buffer "def " ;
-    Buffer.add_string buffer (name^" ") ;
+    output_string output_file "def " ;
+    output_string output_file (name^" ") ;
     let args_string = String.concat ", " args in
     
-    Buffer.add_string buffer ("(" ^ args_string ^"):\n");
+    output_string output_file ("(" ^ args_string ^"):\n");
     List.iter (fun s ->
-          Buffer.add_string buffer (indent^"\t");
-          statement s buffer (indent^"\t");
+          output_string output_file (indent^"\t");
+          statement s output_file (indent^"\t");
     ) body;
-      Buffer.add_string buffer ("\n");
+      output_string output_file ("\n");
   
   | PyImport module_name ->
-    Buffer.add_string buffer ("import " ^ module_name)
+    output_string output_file ("import" ^ module_name)
 
   | PyImportFrom (module_name, names) ->
     let names_string = String.concat "," names in
-    Buffer.add_string buffer ("from " ^ module_name  ^ " import " ^ names_string ^"\n")
+    output_string output_file ("from" ^ module_name  ^ "import" ^ names_string ^"\n")
 
   | PyClassDef (class_name, base_class, fields) ->
-    Buffer.add_string buffer ("class " ^ class_name ^"(BaseModel):\n");
-
+    output_string output_file "class (BaseModel):\n" ;
     List.iter (fun (name, typ) -> 
-          Buffer.add_string buffer (indent ^ "\t" ^ name ^": "^ typ ^ "\n");
+          output_string output_file (indent ^ "\t" ^ name ^": "^ typ ^ "\n");
     ) fields;
   
   | PyIf (expr, body) -> 
-    Buffer.add_string buffer ("if ");
-    Codegen_expr.expression expr buffer;
-    Buffer.add_string buffer (":\n");
+    output_string output_file ("if ");
+    Codegen_expr.expression expr output_file;
+    output_string output_file (":\n");
     List.iter (fun (s) ->
-        statement s buffer (indent ^ "\t");
+        statement s output_file (indent ^ "\t");
     ) body;
 
   | PyIfElse (expr, if_body, else_body) -> 
-      Buffer.add_string buffer ("if ");
-      Codegen_expr.expression expr buffer;
-      Buffer.add_string buffer (":\n");
+      output_string output_file ("if ");
+      Codegen_expr.expression expr output_file;
+      output_string output_file (":\n");
       List.iter (fun (s) ->
-          statement s buffer (indent ^ "\t");
+          statement s output_file (indent ^ "\t");
       ) if_body;
-      Buffer.add_string buffer (indent ^"else:\n");
+      output_string output_file (indent ^"else:\n");
       List.iter (fun (s) ->
-          statement s buffer (indent ^ "\t");
+          statement s output_file (indent ^ "\t");
       ) else_body;

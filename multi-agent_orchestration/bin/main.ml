@@ -67,10 +67,9 @@ let () =
 
     let py_module = Translate_program.program typed_program in
     
-    let _bytes = Codegen_module.codegen_module py_module in
     let file_out_channel = open_out "output.py" in
 
-    output_bytes file_out_channel _bytes;
+    Codegen_module.codegen_module py_module file_out_channel;
 
     close_out file_out_channel;
     close_in file_in_channel;
