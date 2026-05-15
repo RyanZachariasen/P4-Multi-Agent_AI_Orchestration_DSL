@@ -66,7 +66,9 @@ let () =
       exit 0);
 
     let py_module = Translate_program.program typed_program in
-    
+    print_endline ("Successfully translated program!");
+
+    let _bytes = Codegen_module.codegen_module py_module in
     let file_out_channel = open_out "output.py" in
 
     Codegen_module.codegen_module py_module file_out_channel;
