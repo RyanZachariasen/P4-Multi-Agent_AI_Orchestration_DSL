@@ -1,0 +1,8 @@
+Resource poem_writer = anthropic("claude-sonnet")
+
+func text(input: Text) -> Text:
+    on Resource
+    """ write a poem: {input}"""
+
+workflow:
+    x = text("About cake") on poem_writer
