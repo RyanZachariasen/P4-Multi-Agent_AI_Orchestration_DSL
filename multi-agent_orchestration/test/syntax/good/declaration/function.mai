@@ -1,6 +1,10 @@
-func improve_code(input_code: Code) -> Code:
+Resource code_improver_agent = anthropic("claude",  max_tokens=1000, system_prompt="you are a helpul assistant, which improves code")
+
+func improve_code(input1: Text, input2: Text) -> Code:
     on Resource
-    """Improve this code $input_code$"""
+    """Improve this code $input1$ $input2$"""
+
 
 workflow:
-    x = improve_code("<html> </html>")
+    x = improve_code("input1", "input2") on code_improver_agent
+    
