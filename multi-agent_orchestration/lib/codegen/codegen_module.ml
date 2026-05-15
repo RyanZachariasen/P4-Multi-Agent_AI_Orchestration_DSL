@@ -9,7 +9,8 @@ and handle_imports imports output_file =
   List.iter (fun x -> 
       match x with 
       | PyImport import -> output_string output_file ("import " ^ import ^ "\n")
-      | _ -> failwith "error generating module"
+      | PyImportFrom (from, imports) -> output_string output_file ("from " ^ from ^" import " ^ (String.concat "," imports) ^ "\n")
+      | _ ->failwith "error generating module"
     ) imports;
 
 and handle_body statements output_file = 
