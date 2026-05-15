@@ -10,17 +10,14 @@ let collect_imports (prog : Typed_ast.program) : py_statement list =
   in
 
   List.iter (fun decl -> match decl with
-
     (* resource → provider import *)
     | DResource r -> 
         add (PyImport "os");
-        (match r.resource_provider with
-        | Anthropic -> add (PyImport "anthropic")
-        | OpenAI    -> add (PyImportFrom("openai", ["OpenAI"]))
-        | Gemini    -> add (PyImportFrom("google", ["genai"]))
-        | Grok -> 
-            add (PyImportFrom("xai_sdk", ["Client"]));
-            add (PyImportFrom("xai_sdk.chat", ["user"; "system"])))
+        add (PyImportFrom("anthropic", ["Anthropic"]));
+        add (PyImportFrom("openai", ["OpenAI"]));
+        add (PyImportFrom("google", ["genai"]));
+        add (PyImportFrom("xai_sdk", ["Client"]));
+        add (PyImportFrom("xai_sdk.chat", ["user"; "system"]));
 
     (* type declaration → pydantic *)
     | DCustomType _ ->
