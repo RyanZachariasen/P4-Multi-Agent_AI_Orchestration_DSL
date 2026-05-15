@@ -1,8 +1,11 @@
 let program (prog : Typed_ast.program) : Py_ast.py_module =
-  let declarations =
-    List.map Translate_declaration.declaration prog.prog_decls
-  in
+
+  let imports = Translate_import.collect_imports prog in
+
+  let declarations = List.map Translate_declaration.declaration prog.prog_decls in
+
   let workflow_body = Translate_workflow.workflow prog.prog_workflow in
+  Printf.printf "Done!\n%!";
   let main_guard =
     Py_ast.PyIf (
       Py_ast.PyCompare (
@@ -14,6 +17,6 @@ let program (prog : Typed_ast.program) : Py_ast.py_module =
     )
   in
   {
-    imports = [];
+    imports = imports;
     body = declarations @ [main_guard];
   }

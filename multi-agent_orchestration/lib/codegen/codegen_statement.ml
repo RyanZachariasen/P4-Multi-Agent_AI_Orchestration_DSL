@@ -30,11 +30,11 @@ let rec statement (stmt: py_statement) (buffer: Buffer.t) (indent: string) =
       Buffer.add_string buffer ("\n");
   
   | PyImport module_name ->
-    Buffer.add_string buffer ("import" ^ module_name)
+    Buffer.add_string buffer ("import " ^ module_name)
 
   | PyImportFrom (module_name, names) ->
     let names_string = String.concat "," names in
-    Buffer.add_string buffer ("from" ^ module_name  ^ "import" ^ names_string ^"\n")
+    Buffer.add_string buffer ("from " ^ module_name  ^ " import " ^ names_string ^"\n")
 
   | PyClassDef (class_name, base_class, fields) ->
     Buffer.add_string buffer ("class " ^ class_name ^"(BaseModel):\n");

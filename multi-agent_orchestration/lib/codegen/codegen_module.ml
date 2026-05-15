@@ -11,7 +11,11 @@ let rec codegen_module (modul: py_module) : bytes =
 and handle_imports imports buffer = 
   List.iter (fun x -> 
       match x with 
-      | PyImport import -> Buffer.add_string buffer ("import " ^ import ^ "\n")
+      | PyImport import -> 
+          Buffer.add_string buffer ("import " ^ import ^ "\n")
+      | PyImportFrom (module_name, names) ->
+          let names_string = String.concat ", " names in
+          Buffer.add_string buffer ("from " ^ module_name ^ " import " ^ names_string ^ "\n")
       | _ -> failwith "error generating module"
     ) imports;
 
