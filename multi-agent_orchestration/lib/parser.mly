@@ -36,7 +36,7 @@
 %%
 
 program:
-| NEWLINE? decls = list(declaration); NEWLINE?;  wf = workflow; NEWLINE?; EOF;
+| NEWLINE? decls = list(declaration); wf = workflow; NEWLINE?; EOF;
       { { prog_decls    = decls;
           prog_workflow = wf } }
 
@@ -106,7 +106,7 @@ stmt:
 stmt_node:
 | ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
 | PRINT; LPAREN; expr = expr RPAREN; { SPrint expr }
-| WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { 
+| WRITE_FILE ; LPAREN ; file = TEXT ; COMMA; expr = expr; RPAREN { 
     SWriteFile ({
       expr_node= EConst (CFile file);
       expr_location = {

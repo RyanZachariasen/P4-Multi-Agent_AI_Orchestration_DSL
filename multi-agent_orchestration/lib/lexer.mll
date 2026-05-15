@@ -54,9 +54,8 @@ let float = integer '.' digit+
 let space = ' ' | '\t'
 
 rule next_tokens = parse
-  | '\n'    { new_line lexbuf; update_stack (indentation lexbuf) }
-  | space+
-                    { next_tokens lexbuf }
+  | '\n'            { new_line lexbuf; update_stack (indentation lexbuf) }
+  | space+          { next_tokens lexbuf }
   | "/*"            { comment lexbuf; next_tokens lexbuf }
   | "\"\"\""        { [TEXT (triple_string lexbuf)] }
   | "$"             { [TEXT (triple_string lexbuf)] }

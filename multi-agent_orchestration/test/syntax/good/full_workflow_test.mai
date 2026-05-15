@@ -1,0 +1,18 @@
+Resource code_improver = gemini("gemini-2.5-flash",  max_tokens=10000, system_prompt="You are a helpful assistant which improves source code")
+Resource code_reviewer = gemini("gemini-3.1-flash-lite", max_tokens=10000, system_prompt="You are uncle bob and have to review code")
+
+func improve_code(code: Text, review: Text) -> Code:
+    on Resource
+    """Improve this code $code$ based on this review $review$"""
+
+func review_code(code: Text) -> Text:
+    on Resource
+    """Review this code $code$"""
+
+Type car = {wheels: Int, brand: Text}
+
+workflow:
+    start_code = read_file("python_script.py")
+    review = review_code(start_code) on code_reviewer
+    improved_code = improve_code(start_code, review) on code_improver
+    write_file("python_script_v1.py", improved_code)
