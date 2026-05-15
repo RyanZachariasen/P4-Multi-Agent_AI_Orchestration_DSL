@@ -109,11 +109,11 @@ and func_with_resource func =
   (* Find the data from the Resource object *)
   let params_with_resource = List.append params_to_names ["_resource"] in
 
-  let system_prompt = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "system_prompt") in
-  let model = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "model") in
-  let provider = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "provider") in
-  let max_tokens = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "max_tokens") in
-  let client = Py_ast.PyAttr (Py_ast.PyName ("_resource"), "client") in
+  let system_prompt = Py_ast.PySubscript (Py_ast.PyName ("_resource"), string_to_pystring "system_prompt") in
+  let model = Py_ast.PySubscript (Py_ast.PyName ("_resource"), string_to_pystring "model") in
+  let provider = Py_ast.PySubscript (Py_ast.PyName ("_resource"), string_to_pystring "provider") in
+  let max_tokens = Py_ast.PySubscript (Py_ast.PyName ("_resource"),string_to_pystring "max_tokens") in
+  let client = Py_ast.PySubscript (Py_ast.PyName ("_resource"), string_to_pystring "client") in
   let prompt = translate_prompt func.func_prompt in
 
   (*get all the statements for an ai call*)
