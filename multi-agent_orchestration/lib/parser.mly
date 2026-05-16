@@ -25,6 +25,8 @@
 
 %token FUNC ARROW WORKFLOW TYPE ON MAX_TOKENS SYSTEM_PROMPT
 
+%token <string> PROMPT
+
 %token NEWLINE
 
 %token EOF
@@ -173,8 +175,8 @@ declaration:
       DFunc function_declaration }
 
 prompt_part:
-| text = TEXT { PromptText text }
-| expr = expr { PromptHole expr }
+| text = PROMPT { PromptText text }
+| expr = expr   { PromptHole expr }
 
 func_parameter:
 | ident = IDENT ; COLON ; typ = typ; {(ident, typ)}

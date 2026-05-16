@@ -52,15 +52,17 @@ let rec expression (expr : py_expr) (output_file: out_channel) : unit =
     output_char output_file ']';
 
   | PyFString (prefix, holes) ->
-    output_string output_file ("f\"" ^prefix);
-    List.iter (fun (str, hole) -> 
-            output_string output_file str;
-            output_char output_file '{';
-            expression hole output_file;
-            output_char output_file '}';
-            
-        ) holes;
-    output_char output_file '\"';
+      output_string output_file ("f\"" ^ prefix);
+      List.iter (fun (str, hole) -> 
+          output_string output_file str;
+          (match hole with
+          | PyConst PyNone -> ()
+          | _ ->
+              output_char output_file '{';
+              expression hole output_file;
+              output_char output_file '}');
+      ) holes;
+      output_char output_file '\"';
 
   | PyCompare (left, op, right) ->
     expression left output_file;

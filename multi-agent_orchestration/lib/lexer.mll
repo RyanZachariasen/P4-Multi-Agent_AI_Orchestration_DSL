@@ -58,7 +58,7 @@ rule next_tokens = parse
   | space+
                     { next_tokens lexbuf }
   | "/*"            { comment lexbuf; next_tokens lexbuf }
-  | "\"\"\""        { [TEXT (triple_string lexbuf)] }
+  | "\"\"\""        { [PROMPT (triple_string lexbuf)] }
   | "$"             { [TEXT (triple_string lexbuf)] }
   | "->"            { [ARROW] }
   |','              { [COMMA] }
