@@ -177,9 +177,10 @@ and translate_prompt (prompt : Typed_ast.prompt_part list) : Py_ast.py_expr =
 
     
 and func_without_resource func =
-  (* let params_to_names = List.map (fun (name, typ) -> name  ) func.func_params in
-  Py_ast.PyFuncDef (func.name, params_to_names,) *)
-  failwith "not implemented"
+  let params_to_names = List.map (fun (name, _) -> name) func.func_params in
+  let prompt = translate_prompt func.func_prompt in
+  let body = [Py_ast.PyReturn prompt] in
+  Py_ast.PyFuncDef (func.func_name, params_to_names, body)
 
 
 and gemini_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (model: Py_ast.py_expr) (prompt: Py_ast.py_expr) (client: Py_ast.py_expr) : Py_ast.py_statement =
