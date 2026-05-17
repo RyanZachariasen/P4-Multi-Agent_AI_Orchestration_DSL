@@ -1,18 +1,43 @@
-Resource code_improver = gemini("gemini-2.5-flash",  max_tokens=10000, system_prompt="You are a helpful assistant which improves source code")
+Resource code_improver = gemini("gemini-2.5-flash",  max_tokens=10000, system_prompt="You are a helpful assistant which improves source code. The goal of you code is to create the best car racing game in the world. Return the code in one long file. No markdown fences. No Comments.")
 Resource code_reviewer = gemini("gemini-3.1-flash-lite", max_tokens=10000, system_prompt="You are uncle bob and have to review code")
+Resource prompt_improver = gemini("gemini-3.1-flash-lite", max_tokens=2000)
+Resource feature_finder = gemini("gemini-3.1-flash-lite", max_tokens=2000)
+
+
+func deletegate_task(code: Text) -> Text:
+    on Resource
+    """Review this code $code$"""
 
 func improve_code(code: Text, review: Text) -> Code:
     on Resource
     """Improve this code $code$ based on this review $review$"""
 
+func find_new_feature(code: Text) -> Text:
+    on Resource
+    """look at this $code$ and describe a new feature, which will make the game more fun"""
+
 func review_code(code: Text) -> Text:
     on Resource
     """Review this code $code$"""
 
-Type car = {wheels: Int, brand: Text}
+
+func improve_prompt(review: Text) -> Text:
+    on Resource
+    """take this code review $review$ and return a improved prompt, which i can send to another ai to perform the tasks"""
+
+Type car = {wheels: int, brand: Text}
 
 workflow:
-    start_code = read_file("python_script.py")
+    start_code = read_file("car_game.py")
     review = review_code(start_code) on code_reviewer
+    review_prompt = improve_prompt(review) on prompt_improver
     improved_code = improve_code(start_code, review) on code_improver
-    write_file("python_script_v1.py", improved_code)
+    new_feature = improve_code(improved_code, find_new_feature(improved_code) on feature_finder) on code_improver
+    new_feature_1 = improve_code(new_feature, find_new_feature(new_feature) on feature_finder) on code_improver
+    new_feature_2 = improve_code(new_feature_1, find_new_feature(new_feature_1) on feature_finder) on code_improver
+
+    review_1 = review_code(new_feature_2) on code_reviewer
+    review_prompt_1 = improve_prompt(review_1) on prompt_improver
+    improved_code_1 = improve_code(new_feature_2, review_prompt_1) on code_improver
+    
+    write_file("car_game_v1.py", improved_code_1)
