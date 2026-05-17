@@ -15,7 +15,7 @@ type typ =
   | TCustomType of name 
 
 and constant =  
-  | CText of string                (** raw text *)  
+  | CText of string                (** ra text *)  
   | CInt of int                  (** compiler generates int() *)  
   | CFloat of float                (** compiler generates float() *)  
   | CBool of bool                (** compiler generates bool parse *)  
@@ -45,6 +45,7 @@ type statement =
 and statement_node =  
   | SLet   of name * expr      (** x = f(y) on R *)  
   | SPrint of expr
+  | SWhile of expr * statement list
   | SWriteFile of expr * expr  (** write_file(path, content) *)      
   
 type resource_declaration = {  

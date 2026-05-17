@@ -19,7 +19,7 @@
         "int", TINT; "float", TFLOAT; "bool", TBOOL;
         "write_file", WRITE_FILE; "read_file", READ_FILE; "print", PRINT;
         
-        "Text", TTEXT; "File", TFILE; "Code", TCODE;
+        "Text", TTEXT; "File", TFILE; "Code", TCODE; "while", WHILE;
 
         "True", BOOL(true); "False", BOOL(false); "on", ON;
         ];

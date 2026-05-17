@@ -241,6 +241,10 @@ and check_statement_node (node: Ast.statement_node) (location: Ast.location) del
     if not (check_subtype typed_content.expr_typ TText) then
       type_mismatch location typed_content.expr_typ TText;
     SWriteFile (typed_path, typed_content)
+  | Ast.SWhile (e, body) ->
+    let typed_e = expr e delta gamma alpha beta in
+    let typed_body = List.map (fun s -> check_statement s delta gamma alpha beta) body in
+    SWhile (typed_e, typed_body)
 
 
 

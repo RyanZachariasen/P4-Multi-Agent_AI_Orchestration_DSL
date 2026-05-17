@@ -61,3 +61,10 @@ let rec statement (stmt: py_statement) (output_file: out_channel) (indent: strin
       List.iter (fun (s) ->
           statement s output_file (indent ^ "\t");
       ) else_body;
+  | PyWhile (expr, body) ->
+    output_string output_file (indent^"while ");
+    Codegen_expr.expression expr output_file;
+    output_string output_file (":\n");
+    List.iter (fun (s) ->
+        statement s output_file (indent ^ "\t");
+    ) body;
