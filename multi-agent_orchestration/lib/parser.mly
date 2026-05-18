@@ -36,7 +36,7 @@
 %%
 
 program:
-| NEWLINE? decls = list(declaration); NEWLINE?;  wf = workflow; NEWLINE?; EOF;
+| NEWLINE? decls = list(declaration); wf = workflow; NEWLINE?; EOF;
       { { prog_decls    = decls;
           prog_workflow = wf } }
 
@@ -106,7 +106,7 @@ stmt:
 stmt_node:
 | ident = IDENT; ASSIGN; expr = expr  { SLet (ident, expr) }
 | PRINT; LPAREN; expr = expr RPAREN; { SPrint expr }
-| WRITE_FILE ; LPAREN ; file = FILE ; COMMA; expr = expr; RPAREN { 
+| WRITE_FILE ; LPAREN ; file = TEXT ; COMMA; expr = expr; RPAREN { 
     SWriteFile ({
       expr_node= EConst (CFile file);
       expr_location = {
@@ -163,6 +163,7 @@ declaration:
         func_return = return_type;
         func_needs_resource = true;
         func_prompt = prompt;
+        func_body = [];
         func_builtin = false;
         func_location = {
           file = $startpos.pos_fname;
@@ -175,8 +176,7 @@ declaration:
   func_params = separated_list(COMMA, func_parameter); RPAREN;
   ARROW; return_type = typ; COLON; NEWLINE;
   BEGIN;
-  prompt = list(prompt_part);
-  NEWLINE;
+  body = list(stmt);
   END;
       {
       let function_declaration = {
@@ -184,7 +184,8 @@ declaration:
         func_params = func_params;
         func_return = return_type;
         func_needs_resource = false;
-        func_prompt = prompt;
+        func_prompt = [];
+        func_body = body;
         func_builtin = false;
         func_location = {
           file = $startpos.pos_fname;
