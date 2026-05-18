@@ -187,9 +187,9 @@ and gemini_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (mo
   let generate_content = Py_ast.PyAttr (models, "generate_content") in
 
   let generate_content_config = Py_ast.PyAttr (Py_ast.PyName "types", "GenerateContentConfig") in
-  let config = Py_ast.PyCall(generate_content_config, [], [("system_instruction", system_prompt)]) in
+  let config = Py_ast.PyCall(generate_content_config, [], [("system_instruction", system_prompt); ("max_output_tokens", max_tokens)]) in
     
-  let params = [("max_tokens", max_tokens); ("model", model); ("contents",  prompt); ("config", config)] in
+  let params = [("model", model); ("contents",  prompt); ("config", config)] in
 
   let call = Py_ast.PyCall (generate_content, [], params) in
 

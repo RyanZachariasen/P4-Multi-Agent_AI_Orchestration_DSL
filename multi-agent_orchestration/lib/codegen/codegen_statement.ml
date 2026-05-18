@@ -37,7 +37,7 @@ let rec statement (stmt: py_statement) (output_file: out_channel) (indent: strin
     output_string output_file ("from" ^ module_name  ^ "import" ^ names_string ^"\n")
 
   | PyClassDef (class_name, base_class, fields) ->
-    output_string output_file "class (BaseModel):\n" ;
+    output_string output_file ("class " ^ class_name ^ "(BaseModel):\n") ;
     List.iter (fun (name, typ) -> 
           output_string output_file (indent ^ "\t" ^ name ^": "^ typ ^ "\n");
     ) fields;

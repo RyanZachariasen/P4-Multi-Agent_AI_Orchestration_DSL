@@ -151,17 +151,19 @@ and check_variable (x: name) (location: Ast.location) delta gamma alpha beta: ex
     EVar x, ty
 
 and check_field (e: Ast.expr) (field_name: name) (location: Ast.location) delta gamma alpha beta : expr_node * typ= 
-  let custom_type = expr e delta gamma alpha beta in
-  let field_type = match custom_type.expr_node with
-  | EConst CCustomType name ->
-      let declaration = Hashtbl.find delta name in
+  let expr = expr e delta gamma alpha beta in
+
+  let field_type = match expr.expr_typ with
+  | TCustomType typ ->
+      let declaration = Hashtbl.find delta typ in
       (match List.assoc_opt field_name declaration.type_fields with
-        | Some typ -> typ
-        | None   -> unbound_field location name field_name)
-  | _ -> error location "error accessing field"
+        | Some t -> t
+        | None -> unbound_field location typ field_name)
+  | _ -> error location "field access on non-object type"
   in
 
-  EField (custom_type, field_name, field_type), field_type
+
+  EField (expr, field_name, field_type), field_type
 and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_optional: name option) delta gamma alpha beta (location: Ast.location) =
   let decl = match Hashtbl.find_opt alpha func_name with
     | Some func_decl  -> func_decl
