@@ -22,6 +22,7 @@ let unbound_field location typ field = error location ("Unbound field: Type " ^ 
 let resource_required location func = error location ("Resource required: Call to " ^ func ^ " requires a resource")
 let duplicate_declaration location name = error location ("Duplicate declaration: " ^ name ^ " is already declared")
 let resource_not_needed location name = error location ("Resource not needed: " ^ name ^ " does not take a resource")
+let invalid_function_body location = error location "Function body must contain statements and end with an assignment"
 let bad_arity location func expected got = error location ("Bad arity: function " ^ func ^ " expects " ^ string_of_int expected ^ " arguments, got " ^ string_of_int got)
 let type_mismatch location typ1 typ2 = error location ("Type mismatch: expected " ^ string_of_typ typ2 ^ ", got " ^ string_of_typ typ1)
 
@@ -96,18 +97,42 @@ and convert_provider (provider: Ast.provider) =
 and check_func_declaration (func: Ast.func_declaration) delta gamma alpha beta = 
   if Hashtbl.mem alpha func.func_name then
           duplicate_declaration func.func_location func.func_name;
-        let typed_prompt = check_prompt_holes func delta gamma alpha beta in
         let typed_params = List.map (fun (name, param) -> (name, convert_type param delta func.func_location)) func.func_params in
+        let typed_return = convert_type func.func_return delta func.func_location in
+        let typed_prompt =
+          if func.func_needs_resource then
+            check_prompt_holes func delta gamma alpha beta
+          else
+            []
+        in
+        let typed_body =
+          if func.func_needs_resource then
+            []
+          else
+            check_function_body func typed_params typed_return delta alpha beta
+        in
 
         let typed_f = {
           func_name          = func.func_name;
           func_params        = typed_params;
-          func_return        = convert_type func.func_return delta func.func_location;
+          func_return        = typed_return;
           func_needs_resource = func.func_needs_resource;
           func_prompt        = typed_prompt;
+          func_body          = typed_body;
         } in
         Hashtbl.add alpha func.func_name typed_f;
         DFunc typed_f
+
+and check_function_body (func : Ast.func_declaration) typed_params typed_return delta alpha beta : statement list =
+  let gamma_local : variable_env = Hashtbl.create (List.length typed_params) in
+  List.iter (fun (p, t) -> Hashtbl.add gamma_local p t) typed_params;
+  let typed_body = List.map (fun stmt -> check_statement stmt delta gamma_local alpha beta) func.func_body in
+  match List.rev typed_body with
+  | SLet (_, last_typ, _) :: _ ->
+      if not (check_subtype last_typ typed_return) then
+        type_mismatch func.func_location last_typ typed_return;
+      typed_body
+  | _ -> invalid_function_body func.func_location
 
 
 and expr (untyped_expr : Ast.expr) delta gamma alpha beta : expr =
@@ -264,4 +289,3 @@ and convert_type (typ : Ast.typ) delta location: typ  =
   | Ast.TInt -> TInt
   | Ast.TFloat -> TFloat
   | Ast.TFile -> TFile
-

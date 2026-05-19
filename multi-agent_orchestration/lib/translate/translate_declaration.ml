@@ -177,9 +177,15 @@ and translate_prompt (prompt : Typed_ast.prompt_part list) : Py_ast.py_expr =
 
     
 and func_without_resource func =
-  (* let params_to_names = List.map (fun (name, typ) -> name  ) func.func_params in
-  Py_ast.PyFuncDef (func.name, params_to_names,) *)
-  failwith "not implemented"
+  let params_to_names = List.map (fun (name, _) -> name) func.func_params in
+  let translated_body = List.map Translate_statement.statement func.func_body in
+  let return_name =
+    match List.rev func.func_body with
+    | Typed_ast.SLet (name, _, _) :: _ -> name
+    | _ -> failwith "function body must end with an assignment"
+  in
+  let body = translated_body @ [Py_ast.PyReturn (Py_ast.PyName return_name)] in
+  Py_ast.PyFuncDef (func.func_name, params_to_names, body)
 
 
 and gemini_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (model: Py_ast.py_expr) (prompt: Py_ast.py_expr) (client: Py_ast.py_expr) : Py_ast.py_statement =

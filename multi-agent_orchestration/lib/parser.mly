@@ -163,6 +163,29 @@ declaration:
         func_return = return_type;
         func_needs_resource = true;
         func_prompt = prompt;
+        func_body = [];
+        func_builtin = false;
+        func_location = {
+          file = $startpos.pos_fname;
+          line = $startpos.pos_lnum;
+          col  = $startpos.pos_cnum - $startpos.pos_bol;
+        };
+      } in
+      DFunc function_declaration }
+| FUNC; ident = IDENT; LPAREN;
+  func_params = separated_list(COMMA, func_parameter); RPAREN;
+  ARROW; return_type = typ; COLON; NEWLINE;
+  BEGIN;
+  body = nonempty_list(stmt);
+  END;
+      {
+      let function_declaration = {
+        func_name = ident;
+        func_params = func_params;
+        func_return = return_type;
+        func_needs_resource = false;
+        func_prompt = [];
+        func_body = body;
         func_builtin = false;
         func_location = {
           file = $startpos.pos_fname;
