@@ -176,7 +176,7 @@ declaration:
   func_params = separated_list(COMMA, func_parameter); RPAREN;
   ARROW; return_type = typ; COLON; NEWLINE;
   BEGIN;
-  body = list(stmt);
+  body = nonempty_list(stmt);
   END;
       {
       let function_declaration = {

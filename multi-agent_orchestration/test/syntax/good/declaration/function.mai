@@ -4,7 +4,12 @@ func improve_code(input1: Text, input2: Text) -> Code:
     on Resource
     """Improve this code $input1$ $input2$"""
 
+func call_improve(input1: Text, input2: Text) -> Code:
+    a = improve_code(input1, input2) on code_improver_agent
+
+func add(num1: int, num2: int) -> int:
+    a = 2+2
 
 workflow:
-    x = improve_code("input1", "input2") on code_improver_agent
-    
+    x = call_improve("this is code", "this is something else")
+    y = add(2,2)
