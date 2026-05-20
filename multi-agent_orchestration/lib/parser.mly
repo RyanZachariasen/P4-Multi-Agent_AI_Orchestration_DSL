@@ -14,6 +14,8 @@
 %token <string> CODE
 %token <float> FLOAT
 %token <bool> BOOL
+%token <string> PROMPT
+%token <string> HOLE
 
 %token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN COLON BEGIN END
 
@@ -196,8 +198,11 @@ declaration:
       DFunc function_declaration }
 
 prompt_part:
-| text = TEXT { PromptText text }
-| expr = expr { PromptHole expr }
+| text = PROMPT { PromptText text }
+| name = HOLE   { PromptHole { expr_node = EVar name; 
+  expr_location = { file = $startpos.pos_fname; 
+  line = $startpos.pos_lnum; 
+  col  = $startpos.pos_cnum - $startpos.pos_bol } } }
 
 func_parameter:
 | ident = IDENT ; COLON ; typ = typ; {(ident, typ)}
