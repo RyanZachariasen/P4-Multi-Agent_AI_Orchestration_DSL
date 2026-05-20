@@ -67,6 +67,7 @@ type func_declaration = {
   func_return: typ;
   func_needs_resource: bool;     
   func_prompt: prompt_part list;
+  func_body: statement list;
   func_builtin: bool; 
   func_location: location;  
 }  

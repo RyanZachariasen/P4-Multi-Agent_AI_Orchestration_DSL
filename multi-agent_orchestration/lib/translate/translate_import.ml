@@ -1,4 +1,4 @@
-open Typed_ast
+
 open Py_ast
 
 let collect_imports (prog : Typed_ast.program) : py_statement list =
@@ -10,21 +10,22 @@ let collect_imports (prog : Typed_ast.program) : py_statement list =
   in
 
   List.iter (fun decl -> match decl with
-    (* resource → provider import *)
-    | DResource r -> 
+    | Typed_ast.DResource r -> 
         add (PyImport "os");
-        add (PyImportFrom("anthropic", ["Anthropic"]));
-        add (PyImportFrom("openai", ["OpenAI"]));
-        add (PyImportFrom("google", ["genai"]));
-        add (PyImportFrom("xai_sdk", ["Client"]));
-        add (PyImportFrom("xai_sdk.chat", ["user"; "system"]));
+        begin match r.resource_provider with 
+        | Typed_ast.Anthropic -> add (PyImportFrom("anthropic", ["Anthropic"]));
+        | Typed_ast.Gemini -> add (PyImportFrom("google", ["genai"]));
+        | Typed_ast.Grok -> add (PyImportFrom("xai_sdk", ["Client"]));
+        | Typed_ast.OpenAI -> add (PyImportFrom("openai", ["OpenAI"]));
+        end
 
-    (* type declaration → pydantic *)
-    | DCustomType _ ->
-        add (PyImportFrom("pydantic", ["BaseModel"]))
+    | Typed_ast.DCustomType _ -> add (PyImportFrom("pydantic", ["BaseModel"]))
 
-    (* func → no builtin check anymore *)
-    | DFunc _ -> ()
+    | Typed_ast.DFunc _ -> 
+      add (PyImportFrom("xai_sdk.chat", ["user"; "system"]));
+      add (PyImportFrom("google.genai", ["types"]));
+
+
 
   ) prog.prog_decls;
 
