@@ -9,5 +9,5 @@ func improve_code(input: Code) -> Code:
     """Improve this code: $input$"""
 
 workflow:
-    x = code("let i = 0; while(true) { i++}") on coding_agent
-    y = improve_code("def add(a, b): return a + b\nresult = add(1, 2)\nprint(result)") on coding_agent
+    x = code("let i = 0; while(true) i++") on coding_agent
+    y = improve_code("def add(a, b): return a + bresult = add(1, 2)print(result)") on coding_agent

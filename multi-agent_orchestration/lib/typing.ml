@@ -135,12 +135,12 @@ and check_function_body (func : Ast.func_declaration) typed_params typed_return 
   | _ -> invalid_function_body func.func_location
 
 
-and expr_with_expected (untyped_expr : Ast.expr) (expected: typ option) 
+and expr_with_expected_type (untyped_expr : Ast.expr) (expected: typ option) 
     delta gamma alpha beta : expr =
   let typed = expr untyped_expr delta gamma alpha beta in
-  match expected, typed.expr_node with
-  | Some TCode, EConst (CText text) ->
-      { expr_node = EConst (CCode text); expr_typ = TCode }
+  match expected, typed.expr_typ with
+  | Some TCode, TText ->
+      { expr_node = typed.expr_node; expr_typ = TCode }
   | _ -> typed
 
 and expr (untyped_expr : Ast.expr) delta gamma alpha beta : expr =
@@ -211,7 +211,7 @@ and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_option
   (* Tjekker func args*)
   let typed_args = List.map2
     (fun (_, param_typ) arg ->
-      let targ = expr_with_expected arg (Some param_typ) delta gamma alpha beta in
+      let targ = expr_with_expected_type arg (Some param_typ) delta gamma alpha beta in
       if not (check_subtype targ.expr_typ param_typ) then
         type_mismatch location targ.expr_typ param_typ;
       targ)
@@ -292,7 +292,7 @@ and check_prompt_holes (func : Ast.func_declaration) delta gamma alpha beta: pro
           | Ast.EVar name -> Hashtbl.find_opt gamma_local name
           | _ -> None
         in
-        PromptHole (expr_with_expected e expected delta gamma_local alpha beta))
+        PromptHole (expr_with_expected_type e expected delta gamma_local alpha beta))
     func.func_prompt
 
 and convert_type (typ : Ast.typ) delta location: typ  = 
