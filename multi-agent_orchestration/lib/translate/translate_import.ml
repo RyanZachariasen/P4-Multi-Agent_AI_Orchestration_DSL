@@ -9,23 +9,26 @@ let collect_imports (prog : Typed_ast.program) : py_statement list =
       imports := i :: !imports
   in
 
-  List.iter (fun decl -> match decl with
+List.iter (fun decl -> match decl with
     | Typed_ast.DResource r -> 
         add (PyImport "os");
         begin match r.resource_provider with 
-        | Typed_ast.Anthropic -> add (PyImportFrom("anthropic", ["Anthropic"]));
-        | Typed_ast.Gemini -> add (PyImportFrom("google", ["genai"]));
-        | Typed_ast.Grok -> add (PyImportFrom("xai_sdk", ["Client"]));
-        | Typed_ast.OpenAI -> add (PyImportFrom("openai", ["OpenAI"]));
+        | Typed_ast.Anthropic -> 
+            add (PyImportFrom("anthropic", ["Anthropic"]))
+        | Typed_ast.Gemini -> 
+            add (PyImportFrom("google", ["genai"]));
+            add (PyImportFrom("google.genai", ["types"]))
+        | Typed_ast.Grok -> 
+            add (PyImportFrom("xai_sdk", ["Client"]));
+            add (PyImportFrom("xai_sdk.chat", ["user"; "system"]))
+        | Typed_ast.OpenAI -> 
+            add (PyImportFrom("openai", ["OpenAI"]))
         end
 
-    | Typed_ast.DCustomType _ -> add (PyImportFrom("pydantic", ["BaseModel"]))
+    | Typed_ast.DCustomType _ -> 
+        add (PyImportFrom("pydantic", ["BaseModel"]))
 
-    | Typed_ast.DFunc _ -> 
-      add (PyImportFrom("xai_sdk.chat", ["user"; "system"]));
-      add (PyImportFrom("google.genai", ["types"]));
-
-
+    | Typed_ast.DFunc _ -> ()
 
   ) prog.prog_decls;
 
