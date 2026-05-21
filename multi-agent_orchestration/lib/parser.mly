@@ -113,7 +113,7 @@ stmt_node:
           col  = $startpos.pos_cnum - $startpos.pos_bol;
         };
     }, expr)}
-| WHILE; e = expr; COLON; NEWLINE; BEGIN; NEWLINE?; s = list(stmt); NEWLINE?; END; { SWhile (e, s)}
+| WHILE; e = expr; COLON; NEWLINE; BEGIN; s = list(stmt); NEWLINE?; END; { SWhile (e, s)}
 
 declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN ; NEWLINE { 
