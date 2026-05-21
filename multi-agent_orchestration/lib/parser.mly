@@ -9,9 +9,9 @@
 %token TINT TCODE TFLOAT TBOOL TTEXT TFILE 
 
 %token <int> INT
-%token <string> FILE
+
 %token <string> TEXT
-%token <string> CODE
+
 %token <float> FLOAT
 %token <bool> BOOL
 
@@ -87,8 +87,6 @@ constant:
 | const = TEXT { CText const }
 | const = FLOAT { CFloat const }
 | const = BOOL { CBool const }
-| const = CODE { CCode const }
-| const = FILE { CFile const }
 ;
 
 stmt:
@@ -151,8 +149,9 @@ declaration:
 
 | FUNC; ident = IDENT; LPAREN;
   func_params = separated_list(COMMA, func_parameter); RPAREN;
-  ARROW; return_type = typ; COLON; NEWLINE?;
-  ON ; RESOURCE ; NEWLINE? BEGIN;
+  ARROW; return_type = typ; COLON; NEWLINE;
+  BEGIN;
+  ON ; RESOURCE ; NEWLINE ;
   prompt = list(prompt_part); 
   NEWLINE;
   END; 
