@@ -47,6 +47,7 @@ and resource_declaration = {
 type statement =
   | SLet       of name * typ * expr
   | SPrint     of expr
+  | SWhile     of expr * statement list
   | SWriteFile of expr * expr
 
 

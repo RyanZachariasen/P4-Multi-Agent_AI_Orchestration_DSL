@@ -34,6 +34,7 @@ type py_statement =
   | PyImport     of string                                  (* import anthropic *)
   | PyImportFrom of string * string list                    (* from pydantic import BaseModel *)
   | PyClassDef   of string * string * (string * string) list  
+  | PyWhile      of py_expr * py_statement list
                                                             (* class Verdict(BaseModel): fields *)
 
 type py_module = {

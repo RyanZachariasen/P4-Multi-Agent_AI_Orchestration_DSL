@@ -9,9 +9,9 @@
 %token TINT TCODE TFLOAT TBOOL TTEXT TFILE 
 
 %token <int> INT
-%token <string> FILE
+
 %token <string> TEXT
-%token <string> CODE
+
 %token <float> FLOAT
 %token <bool> BOOL
 %token <string> PROMPT
@@ -25,7 +25,7 @@
 
 %token RESOURCE ANTHROPIC OPENAI GEMINI GROK
 
-%token FUNC ARROW WORKFLOW TYPE ON MAX_TOKENS SYSTEM_PROMPT
+%token FUNC ARROW WORKFLOW TYPE ON MAX_TOKENS SYSTEM_PROMPT WHILE
 
 %token NEWLINE
 
@@ -38,7 +38,7 @@
 %%
 
 program:
-| NEWLINE? decls = list(declaration); wf = workflow; NEWLINE?; EOF;
+| NEWLINE? decls = list(declaration); NEWLINE?; wf = workflow; NEWLINE?; EOF;
       { { prog_decls    = decls;
           prog_workflow = wf } }
 
@@ -89,8 +89,6 @@ constant:
 | const = TEXT { CText const }
 | const = FLOAT { CFloat const }
 | const = BOOL { CBool const }
-| const = CODE { CCode const }
-| const = FILE { CFile const }
 ;
 
 stmt:
@@ -117,6 +115,7 @@ stmt_node:
           col  = $startpos.pos_cnum - $startpos.pos_bol;
         };
     }, expr)}
+| WHILE; e = expr; COLON; NEWLINE; BEGIN; s = list(stmt); NEWLINE?; END; { SWhile (e, s)}
 
 declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN ; NEWLINE { 
@@ -136,7 +135,7 @@ declaration:
   }
 | TYPE; ident = IDENT; ASSIGN; LBRACE;
   fields = separated_list(COMMA, custom_type_field);
-  RBRACE; NEWLINE?
+  RBRACE; NEWLINE;
   {
     DCustomType {
       type_name = ident;
