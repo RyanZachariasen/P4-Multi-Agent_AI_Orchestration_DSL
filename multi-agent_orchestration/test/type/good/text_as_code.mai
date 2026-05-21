@@ -1,0 +1,13 @@
+Resource coding_agent = anthropic("claude-sonnet")
+
+func code(input: Code) -> Code:
+    on Resource
+    """Code this: $input$"""
+
+func improve_code(input: Code) -> Code:
+    on Resource
+    """Improve this code: $input$"""
+
+workflow:
+    x = code("let i = 0; while(true) i++") on coding_agent
+    y = improve_code("def add(a, b): return a + bresult = add(1, 2)print(result)") on coding_agent

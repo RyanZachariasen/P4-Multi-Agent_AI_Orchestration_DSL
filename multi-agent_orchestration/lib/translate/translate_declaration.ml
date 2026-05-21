@@ -165,17 +165,14 @@ def code (some_input_text, prompt, _resource):
 
 *)
 and translate_prompt (prompt : Typed_ast.prompt_part list) : Py_ast.py_expr =
-  let fstring = List.map (fun part ->  
+  let parts = List.map (fun part ->
     match part with
-  | Typed_ast.PromptText text -> (text, string_to_pystring "")
-  | Typed_ast.PromptHole expr ->  
-    let expr = Translate_expr.expr expr in
-    ("", expr);
+    | Typed_ast.PromptText text -> (text, Py_ast.PyConst Py_ast.PyNone)
+    | Typed_ast.PromptHole expr -> ("", Translate_expr.expr expr)
   ) prompt in
-  
-  Py_ast.PyFString ("", fstring)
+  Py_ast.PyFString ("", parts)
 
-    
+  
 and func_without_resource func =
   let params_to_names = List.map (fun (name, _) -> name) func.func_params in
   let translated_body = List.map Translate_statement.statement func.func_body in

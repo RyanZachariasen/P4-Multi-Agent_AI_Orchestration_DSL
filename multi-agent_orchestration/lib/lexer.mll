@@ -57,8 +57,7 @@ rule next_tokens = parse
   | '\n'            { new_line lexbuf; update_stack (indentation lexbuf) }
   | space+          { next_tokens lexbuf }
   | "/*"            { comment lexbuf; next_tokens lexbuf }
-  | "\"\"\""        { [TEXT (triple_string lexbuf)] }
-  | "$"             { [TEXT (triple_string lexbuf)] }
+  | "\"\"\""        { triple_string lexbuf }
   | "->"            { [ARROW] }
   |','              { [COMMA] }
   |'.'              { [DOT] }
@@ -99,10 +98,25 @@ and comment = parse
 
 
 and triple_string = parse
-  | "\"\"\""        { let s = Buffer.contents string_buffer in Buffer.reset string_buffer; s }
-  | "$"             { let s = Buffer.contents string_buffer in Buffer.reset string_buffer; s}
-  | _ as c          { Buffer.add_char string_buffer c; triple_string lexbuf }
-  | eof             { raise (Lexing_error "unterminated triple string") }
+  | "\"\"\""  { 
+      let s = Buffer.contents string_buffer in 
+      Buffer.reset string_buffer; 
+      [PROMPT s] }
+  | "$"       { 
+      let s = Buffer.contents string_buffer in 
+      Buffer.reset string_buffer;
+      let hole = hole_string lexbuf in
+      [PROMPT s; HOLE hole] @ triple_string lexbuf }
+  | _ as c    { Buffer.add_char string_buffer c; triple_string lexbuf }
+  | eof       { raise (Lexing_error "unterminated triple string") }
+
+and hole_string = parse
+  | "$"       { 
+      let s = Buffer.contents string_buffer in 
+      Buffer.reset string_buffer; 
+      s }
+  | _ as c    { Buffer.add_char string_buffer c; hole_string lexbuf }
+  | eof       { raise (Lexing_error "unterminated hole") }
 
 and indentation = parse
   | space* '\n'{ new_line lexbuf; indentation lexbuf }

@@ -135,6 +135,15 @@ and check_function_body (func : Ast.func_declaration) typed_params typed_return 
   | _ -> invalid_function_body func.func_location
 
 
+
+and expr_with_expected_type (untyped_expr : Ast.expr) (expected: typ option) 
+    delta gamma alpha beta : expr =
+  let typed = expr untyped_expr delta gamma alpha beta in
+  match expected, typed.expr_typ with
+  | Some TCode, TText ->
+      { expr_node = typed.expr_node; expr_typ = TCode }
+  | _ -> typed
+
 and check_expr (untyped_expr : Ast.expr) delta gamma alpha beta : expr =
   let typed_expr, typ = check_expr_node untyped_expr.expr_node untyped_expr.expr_location delta gamma alpha beta in
   { expr_node = typed_expr; 
@@ -153,11 +162,12 @@ and check_expr_node (node : Ast.expr_node) (location: Ast.location) delta gamma 
     if not (check_subtype typed_path.expr_typ TText) then
       type_mismatch location typed_path.expr_typ TText;
     EReadFile typed_path, TText
+
 and check_constant (const: Ast.constant) delta (location: Ast.location) : expr_node * typ = 
   let const, typ = match const with
-      | Ast.CText  text           -> CText text, TText
-      | Ast.CInt   int           -> CInt int, TInt
-      | Ast.CFloat float           -> CFloat float, TFloat
+      | Ast.CText text            -> CText text, TText
+      | Ast.CInt   int            -> CInt int, TInt
+      | Ast.CFloat float          -> CFloat float, TFloat
       | Ast.CBool  bool           -> CBool bool, TBool
       | Ast.CCode  code           -> CCode code, TCode
       | Ast.CFile  file           -> CFile file, TFile
@@ -186,9 +196,8 @@ and check_field (e: Ast.expr) (field_name: name) (location: Ast.location) delta 
         | None -> unbound_field location typ field_name)
   | _ -> error location "field access on non-object type"
   in
-
-
   EField (expr, field_name, field_type), field_type
+
 and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_optional: name option) delta gamma alpha beta (location: Ast.location) =
   let decl = match Hashtbl.find_opt alpha func_name with
     | Some func_decl  -> func_decl
@@ -203,11 +212,13 @@ and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_option
   (* Tjekker func args*)
   let typed_args = List.map2
     (fun (_, param_typ) arg ->
-      let targ = check_expr arg delta gamma alpha beta in
+      let targ = expr_with_expected_type arg (Some param_typ) delta gamma alpha beta in
       if not (check_subtype targ.expr_typ param_typ) then
         type_mismatch location targ.expr_typ param_typ;
       targ)
     decl.func_params args
+
+    
   in
   (* Tjekker resource*)
   let _ = match decl.func_needs_resource, resource_optional with
@@ -281,7 +292,13 @@ and check_prompt_holes (func : Ast.func_declaration) delta gamma alpha beta: pro
   List.iter (fun (p, t) -> Hashtbl.add gamma_local p (convert_type t delta func.func_location)) func.func_params;
   List.map (function
     | Ast.PromptText s -> PromptText s
-    | Ast.PromptHole e -> PromptHole (check_expr e delta gamma_local alpha beta))
+
+    | Ast.PromptHole e -> 
+       let expected = match e.expr_node with
+          | Ast.EVar name -> Hashtbl.find_opt gamma_local name
+          | _ -> None
+        in
+        PromptHole (expr_with_expected_type e expected delta gamma_local alpha beta))
     func.func_prompt
 
 and convert_type (typ : Ast.typ) delta location: typ  = 
