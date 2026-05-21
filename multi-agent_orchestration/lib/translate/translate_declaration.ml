@@ -128,9 +128,7 @@ and func_with_resource func =
   let grok_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "grok"), grok_call_statements) in
   let openai_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "openai"), [openai_call_statement]) in
 
-  let return_statement = Py_ast.PyReturn (Py_ast.PyName "_result") in
-
-  let body = [gemini_if; anthropic_if; grok_if; openai_if; return_statement] in
+  let body = [gemini_if; anthropic_if; grok_if; openai_if;] in
 
   Py_ast.PyFuncDef (func.func_name, params_with_resource, body)
 (*
@@ -197,8 +195,8 @@ and gemini_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (mo
   let call = Py_ast.PyCall (generate_content, [], params) in
 
   let response_text = Py_ast.PyAttr (call, "text") in
-  let assign_to_result = Py_ast.PyAssign ("_result", response_text) in
-  assign_to_result
+  Py_ast.PyReturn (response_text)
+
 
   (*  Generates
     _result = client.models.generate_content(
@@ -218,10 +216,7 @@ and anthropic_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) 
   let call = Py_ast.PyCall (create, [], params) in
 
   let response_text = Py_ast.PyAttr (call, "content") in
-
-  let assign_to_result = Py_ast.PyAssign ("_result", response_text) in
-
-  assign_to_result
+  Py_ast.PyReturn (response_text)
   (*
   message = client.messages.create(
     max_tokens=1024,
@@ -242,11 +237,10 @@ and openai_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (mo
 
   let call = Py_ast.PyCall (create, [], params) in
 
-  let output_text = Py_ast.PyAttr (call, "output_text") in
+  let response_text = Py_ast.PyAttr (call, "output_text") in
 
-  let assign_to_result = Py_ast.PyAssign ("_result", output_text) in
+  Py_ast.PyReturn (response_text)
 
-  assign_to_result
   (*
     _response = client.responses.create(
         model="gpt-5.5",
@@ -276,9 +270,9 @@ and grok_call (max_tokens: Py_ast.py_expr) (system_prompt: Py_ast.py_expr) (mode
 
   let response_text = Py_ast.PyAttr (call_sample, "content") in
 
-  let assign_to_result = Py_ast.PyAssign ("_result", response_text) in
-  
-  [assign_chat; Py_ast.PyExpr call_append_user; Py_ast.PyExpr call_append_system; assign_to_result]
+  let return =  Py_ast.PyReturn (response_text) in
+
+  [assign_chat; Py_ast.PyExpr call_append_user; Py_ast.PyExpr call_append_system; return]
   (*
     chat = client.chat.create(model="grok-4.3")
     chat.append(system("You are Grok, a highly intelligent, helpful AI assistant."))
