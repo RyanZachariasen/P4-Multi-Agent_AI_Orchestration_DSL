@@ -36,7 +36,7 @@
 %%
 
 program:
-| NEWLINE? decls = list(declaration); wf = workflow; NEWLINE?; EOF;
+| NEWLINE? decls = list(declaration); NEWLINE?; wf = workflow; NEWLINE?; EOF;
       { { prog_decls    = decls;
           prog_workflow = wf } }
 
@@ -135,7 +135,7 @@ declaration:
   }
 | TYPE; ident = IDENT; ASSIGN; LBRACE;
   fields = separated_list(COMMA, custom_type_field);
-  RBRACE; NEWLINE?
+  RBRACE; NEWLINE;
   {
     DCustomType {
       type_name = ident;
@@ -151,9 +151,8 @@ declaration:
 
 | FUNC; ident = IDENT; LPAREN;
   func_params = separated_list(COMMA, func_parameter); RPAREN;
-  ARROW; return_type = typ; COLON; NEWLINE;
-  BEGIN;
-  ON ; RESOURCE ; NEWLINE ;
+  ARROW; return_type = typ; COLON; NEWLINE?;
+  ON ; RESOURCE ; NEWLINE? BEGIN;
   prompt = list(prompt_part); 
   NEWLINE;
   END; 
