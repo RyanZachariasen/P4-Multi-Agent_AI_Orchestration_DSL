@@ -138,7 +138,7 @@ and check_function_body (func : Ast.func_declaration) typed_params typed_return 
 
 and expr_with_expected_type (untyped_expr : Ast.expr) (expected: typ option) 
     delta gamma alpha beta : expr =
-  let typed = expr untyped_expr delta gamma alpha beta in
+  let typed = check_expr untyped_expr delta gamma alpha beta in
   match expected, typed.expr_typ with
   | Some TCode, TText ->
       { expr_node = typed.expr_node; expr_typ = TCode }
