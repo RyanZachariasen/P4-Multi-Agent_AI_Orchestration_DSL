@@ -45,12 +45,12 @@ and check_program (program : Ast.program) : program =
 
   let typed_decls = List.map (fun decl -> check_declaration decl delta gamma alpha beta) program.prog_decls in
 
-  let typed_wf = workflow program.prog_workflow delta gamma alpha beta in
+  let typed_wf = check_workflow program.prog_workflow delta gamma alpha beta in
 
   { prog_decls    = typed_decls;
     prog_workflow = typed_wf }
 
-and  workflow (wf : Ast.workflow) delta gamma alpha beta =
+and check_workflow (wf : Ast.workflow) delta gamma alpha beta =
   let typed_body = List.map (fun stmt -> check_statement stmt delta gamma alpha beta) wf.workflow_body in 
   {
     workflow_name = "workflow";
@@ -135,7 +135,7 @@ and check_function_body (func : Ast.func_declaration) typed_params typed_return 
   | _ -> invalid_function_body func.func_location
 
 
-and expr (untyped_expr : Ast.expr) delta gamma alpha beta : expr =
+and check_expr (untyped_expr : Ast.expr) delta gamma alpha beta : expr =
   let typed_expr, typ = check_expr_node untyped_expr.expr_node untyped_expr.expr_location delta gamma alpha beta in
   { expr_node = typed_expr; 
     expr_typ = typ }
@@ -149,7 +149,7 @@ and check_expr_node (node : Ast.expr_node) (location: Ast.location) delta gamma 
   | Ast.EField (e, field_name) -> check_field e field_name location delta gamma alpha beta
   | Ast.EBinOp (opperand, e1, e2) -> check_binop opperand e1 e2 location delta gamma alpha beta
   | Ast.EReadFile path_expr ->
-    let typed_path = expr path_expr delta gamma alpha beta in
+    let typed_path = check_expr path_expr delta gamma alpha beta in
     if not (check_subtype typed_path.expr_typ TText) then
       type_mismatch location typed_path.expr_typ TText;
     EReadFile typed_path, TText
@@ -176,7 +176,7 @@ and check_variable (x: name) (location: Ast.location) delta gamma alpha beta: ex
     EVar x, ty
 
 and check_field (e: Ast.expr) (field_name: name) (location: Ast.location) delta gamma alpha beta : expr_node * typ= 
-  let expr = expr e delta gamma alpha beta in
+  let expr = check_expr e delta gamma alpha beta in
 
   let field_type = match expr.expr_typ with
   | TCustomType typ ->
@@ -203,7 +203,7 @@ and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_option
   (* Tjekker func args*)
   let typed_args = List.map2
     (fun (_, param_typ) arg ->
-      let targ = expr arg delta gamma alpha beta in
+      let targ = check_expr arg delta gamma alpha beta in
       if not (check_subtype targ.expr_typ param_typ) then
         type_mismatch location targ.expr_typ param_typ;
       targ)
@@ -222,8 +222,8 @@ and check_func_call (func_name: Ast.name) (args: Ast.expr list) (resource_option
     ECall (func_name, typed_args, resource_optional), decl.func_return
 
 and check_binop (opperand : Ast.binop) (expr_1 : Ast.expr) (expr_2 : Ast.expr) (location: Ast.location) delta gamma alpha beta : expr_node * typ = 
-    let typed_expr_1 = expr expr_1 delta gamma alpha beta in
-    let typed_expr_2 = expr expr_2 delta gamma alpha beta in
+    let typed_expr_1 = check_expr expr_1 delta gamma alpha beta in
+    let typed_expr_2 = check_expr expr_2 delta gamma alpha beta in
 
     let t_opperand = match opperand with
     | Ast.Add -> Add
@@ -252,24 +252,24 @@ and check_statement (statement: Ast.statement) delta gamma alpha beta : statemen
 and check_statement_node (node: Ast.statement_node) (location: Ast.location) delta gamma alpha beta : statement= 
   match node with
   | Ast.SLet (x, e) ->
-    let typed_e = expr e delta gamma alpha beta in
+    let typed_e = check_expr e delta gamma alpha beta in
     Hashtbl.replace gamma x typed_e.expr_typ;
     SLet (x, typed_e.expr_typ, typed_e)
 
   | Ast.SPrint e ->
-    let typed_e = expr e delta gamma alpha beta in
+    let typed_e = check_expr e delta gamma alpha beta in
     SPrint typed_e
 
   | Ast.SWriteFile (path_expr, content_expr) ->
-    let typed_path = expr path_expr delta gamma alpha beta in
-    let typed_content = expr content_expr delta gamma alpha beta in
+    let typed_path = check_expr path_expr delta gamma alpha beta in
+    let typed_content = check_expr content_expr delta gamma alpha beta in
     if not (check_subtype typed_path.expr_typ TFile) then
       type_mismatch location typed_path.expr_typ TFile;
     if not (check_subtype typed_content.expr_typ TText) then
       type_mismatch location typed_content.expr_typ TText;
     SWriteFile (typed_path, typed_content)
   | Ast.SWhile (e, body) ->
-    let typed_e = expr e delta gamma alpha beta in
+    let typed_e = check_expr e delta gamma alpha beta in
     let typed_body = List.map (fun s -> check_statement s delta gamma alpha beta) body in
     SWhile (typed_e, typed_body)
 
@@ -281,7 +281,7 @@ and check_prompt_holes (func : Ast.func_declaration) delta gamma alpha beta: pro
   List.iter (fun (p, t) -> Hashtbl.add gamma_local p (convert_type t delta func.func_location)) func.func_params;
   List.map (function
     | Ast.PromptText s -> PromptText s
-    | Ast.PromptHole e -> PromptHole (expr e delta gamma_local alpha beta))
+    | Ast.PromptHole e -> PromptHole (check_expr e delta gamma_local alpha beta))
     func.func_prompt
 
 and convert_type (typ : Ast.typ) delta location: typ  = 
