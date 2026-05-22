@@ -1,0 +1,2 @@
+This is a sample document used for testing the if_else workflow.
+It should be long enough to trigger the detailed summariser branch.
