@@ -19,7 +19,7 @@
 
 %token COMMA LBRACE RBRACE DOT LPAREN RPAREN ASSIGN COLON BEGIN END
 
-%token WRITE_FILE READ_FILE PRINT
+%token WRITE_FILE READ_FILE PRINT IF ELSE
 
 %token PLUS MINUS TIMES DIV
 
@@ -116,6 +116,32 @@ stmt_node:
         };
     }, expr)}
 | WHILE; e = expr; COLON; NEWLINE; BEGIN; s = list(stmt); NEWLINE?; END; { SWhile (e, s)}
+| IF; cond = expr; COLON; NEWLINE;
+  BEGIN; then_body = list(stmt); END;
+  else_branch = opt_else_branch
+  { SIf (cond, then_body, else_branch) }
+
+opt_else_branch:
+(* no else *)
+| /* empty */ { None }
+(* recursive else if(s) *)
+| ELSE; IF; cond = expr; COLON; NEWLINE;
+  BEGIN; body = list(stmt); END
+  else_branch = opt_else_branch
+  {
+    Some [{
+      statement_node = SIf (cond, body, else_branch);
+      statement_location = {
+        file = $startpos.pos_fname;
+        line = $startpos.pos_lnum;
+        col  = $startpos.pos_cnum - $startpos.pos_bol;
+      };
+    }]
+  }
+(* else *)
+| ELSE; COLON; NEWLINE;
+  BEGIN; body = list(stmt); END
+  { Some body }
 
 declaration:
 | RESOURCE; ident=IDENT; ASSIGN; provider=provider; LPAREN; model=TEXT; optionals=resource_optionals; RPAREN ; NEWLINE { 

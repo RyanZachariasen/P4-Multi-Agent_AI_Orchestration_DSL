@@ -48,6 +48,7 @@ type statement =
   | SLet       of name * typ * expr
   | SPrint     of expr
   | SWhile     of expr * statement list
+  | SIf        of expr * statement list * statement list option
   | SWriteFile of expr * expr
 
 

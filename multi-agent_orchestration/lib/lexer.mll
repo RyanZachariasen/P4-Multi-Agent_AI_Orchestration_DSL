@@ -16,8 +16,10 @@
 
         "anthropic", ANTHROPIC; "openai", OPENAI; "gemini", GEMINI; "grok", GROK; 
     
-        "int", TINT; "float", TFLOAT; "bool", TBOOL;
-        "write_file", WRITE_FILE; "read_file", READ_FILE; "print", PRINT; "while", WHILE;
+        "int", TINT; "float", TFLOAT; "bool", TBOOL; "Bool", TBOOL;
+
+        "write_file", WRITE_FILE; "read_file", READ_FILE; "print", PRINT; 
+        "while", WHILE; "if", IF; "else", ELSE;
         
         "Text", TTEXT; "File", TFILE; "Code", TCODE; 
 

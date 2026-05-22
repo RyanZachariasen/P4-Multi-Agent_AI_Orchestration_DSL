@@ -279,8 +279,19 @@ and check_statement_node (node: Ast.statement_node) (location: Ast.location) del
     if not (check_subtype typed_content.expr_typ TText) then
       type_mismatch location typed_content.expr_typ TText;
     SWriteFile (typed_path, typed_content)
+  | Ast.SIf (cond_expr, then_body, else_body) ->
+    let typed_cond = check_expr cond_expr delta gamma alpha beta in
+    if not (check_subtype typed_cond.expr_typ TBool) then
+      type_mismatch location typed_cond.expr_typ TBool;
+    let typed_then = List.map (fun stmt -> check_statement stmt delta gamma alpha beta) then_body in
+    let typed_else = match else_body with
+      | None -> None
+      | Some stmts -> Some (List.map (fun stmt -> check_statement stmt delta gamma alpha beta) stmts)
+    in SIf (typed_cond, typed_then, typed_else)
   | Ast.SWhile (e, stmt_list) ->
     let typed_e = check_expr e delta gamma alpha beta in
+    if not (check_subtype typed_e.expr_typ TBool) then
+      type_mismatch location typed_e.expr_typ TBool;
     let typed_stmt_list = List.map (fun stmt -> check_statement stmt delta gamma alpha beta) stmt_list in
     SWhile (typed_e, typed_stmt_list)
 

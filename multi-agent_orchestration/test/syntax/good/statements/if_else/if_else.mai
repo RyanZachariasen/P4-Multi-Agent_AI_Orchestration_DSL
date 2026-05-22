@@ -14,8 +14,13 @@ workflow:
   prompt = read_file("text.txt")
 
   use_verbose = True
-  if use_verbose:
+  use_flag = True
+  fallback_flag = False
+
+  if use_flag:
     summary = summarise(prompt) on verbose_summariser
+  else if fallback_flag:
+    print("Falling back to alternative flow")
   else:
     summary = summarise(prompt) on concise_summariser
   print(summary)
@@ -23,6 +28,8 @@ workflow:
   detailed = choose_detail(prompt) on selector
   if detailed:
     summary2 = summarise(prompt) on verbose_summariser
-  else:
+  else if use_flag:
     summary2 = summarise(prompt) on concise_summariser
+  else:
+    print("selector returned unexpected; skipping expensive call")
   print(summary2)

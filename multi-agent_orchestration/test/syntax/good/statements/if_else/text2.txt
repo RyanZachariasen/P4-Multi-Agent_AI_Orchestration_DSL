@@ -1,0 +1,1 @@
+This longer document contains multiple paragraphs and details that should trigger a more verbose summariser branch in the test. It includes examples, context, and extra sentences to ensure length.
