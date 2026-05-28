@@ -26,8 +26,7 @@ type args = string list
 
 type py_statement =
   | PyAssign     of string * py_expr                        (* x = expr *)
-  | PyIf         of py_expr * py_statement list
-  | PyIfElse     of py_expr * py_statement list * py_statement list
+  | PyIf         of py_expr * py_statement list * py_statement list
   | PyExpr       of py_expr                                 (* print(x) *)
   | PyReturn     of py_expr                                 (* return x *)
   | PyFuncDef    of string * args * py_statement list                                                            (* def f(args, *, kwargs): body *)

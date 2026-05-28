@@ -12,8 +12,7 @@ let program (prog : Typed_ast.program) : Py_ast.py_module =
         Py_ast.PyName "__name__",
         Py_ast.Eq,
         Py_ast.PyConst (Py_ast.PyString "__main__")
-      ),
-      workflow_body
+      ), workflow_body, []
     )
   in
   {

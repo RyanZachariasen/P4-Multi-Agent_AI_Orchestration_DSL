@@ -46,7 +46,9 @@ and statement_node =
   | SLet   of name * expr      (** x = f(y) on R *)  
   | SPrint of expr
   | SWhile of expr * statement list
-  | SWriteFile of expr * expr  (** write_file(path, content) *)      
+  (*if (cond, then do statements, optional else do this)*)
+  | SIf of expr * statement list * statement list option 
+  | SWriteFile of expr * expr  (** write_file(path, content) *)
   
 type resource_declaration = {  
   resource_name: name;

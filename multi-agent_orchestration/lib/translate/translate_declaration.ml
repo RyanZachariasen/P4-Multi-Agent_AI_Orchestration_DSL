@@ -123,10 +123,10 @@ and func_with_resource func =
   let grok_call_statements = grok_call max_tokens system_prompt model prompt client in
 
   (*If statements to choose correct AI*)
-  let gemini_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "gemini"), [gemini_call_statement]) in
-  let anthropic_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "anthropic"), [anthropic_call_statement]) in
-  let grok_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "grok"), grok_call_statements) in
-  let openai_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "openai"), [openai_call_statement]) in
+  let gemini_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "gemini"), [gemini_call_statement], []) in
+  let anthropic_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "anthropic"), [anthropic_call_statement], []) in
+  let grok_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "grok"), grok_call_statements, []) in
+  let openai_if = Py_ast.PyIf  (Py_ast.PyCompare (provider, Py_ast.Eq, string_to_pystring "openai"), [openai_call_statement], []) in
 
   let return_statement = Py_ast.PyReturn (Py_ast.PyName "_result") in
 

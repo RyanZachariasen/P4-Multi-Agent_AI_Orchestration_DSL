@@ -1,0 +1,35 @@
+Resource concise_summariser = gemini("gemini-3.1-flash-lite", max_tokens=1000, system_prompt="You are a concise summariser. Keep answers short.")
+Resource verbose_summariser = gemini("gemini-3.1-flash-lite", max_tokens=1000, system_prompt="You are a verbose summariser. Provide a detailed answer.")
+Resource selector = gemini("gemini-3.1-flash-lite", max_tokens=500, system_prompt="Return True if the text requires a detailed summary, otherwise return False.")
+
+func summarise(text: Text) -> Text:
+  on Resource
+  """Summarise this text $text$"""
+
+func choose_detail(text: Text) -> Bool:
+  on Resource
+  """Return True if this text requires a detailed summary, otherwise return False. $text$"""
+
+workflow:
+  prompt = read_file("text.txt")
+
+  use_verbose = True
+  use_flag = True
+  fallback_flag = False
+
+  if use_flag:
+    summary = summarise(prompt) on verbose_summariser
+  else if fallback_flag:
+    print("Falling back to alternative flow")
+  else:
+    summary = summarise(prompt) on concise_summariser
+  print(summary)
+
+  detailed = choose_detail(prompt) on selector
+  if detailed:
+    summary2 = summarise(prompt) on verbose_summariser
+  else if use_flag:
+    summary2 = summarise(prompt) on concise_summariser
+  else:
+    print("selector returned unexpected; skipping expensive call")
+  print(summary2)
